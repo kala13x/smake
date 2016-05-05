@@ -32,7 +32,7 @@ void SMake_InitInfo(SMakeInfo *pInf)
 static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
 {
     int c;
-    while ( (c = getopt(argc, argv, "s:v1:h1")) != -1) 
+    while ( (c = getopt(argc, argv, "s:c:f:l:p:v1:h1")) != -1) 
     {
         switch (c)
         {
@@ -41,6 +41,15 @@ static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
                 break;
             case 'c':
                 strcpy(pInfo->sCfgFile, optarg);
+                break;
+            case 'f':
+                printf("%s\n",optarg);
+                break;
+            case 'l':
+                printf("%s\n",optarg);
+                break;
+            case 'p':
+                printf("%s\n",optarg);
                 break;
             case 'v':
                 pInfo->nVerbose = 1;
@@ -81,16 +90,11 @@ int main(int argc, char *argv[])
             nRetVal = ConfigFile_Load(info.sCfgFile, &objMap);
             if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
 
-            if (strlen(objMap.sName) < 1) 
-            {
-                nRetVal = SMake_FindMain(&objMap);
-                if (nRetVal) 
-                {
-                    nRetVal = SMake_WriteMake(&objMap);
-                    if (nRetVal) slog(0, SLOG_LIVE, "Succesfully generated Makefile");
-                }
-                else slog(0, SLOG_ERROR, "Undefined reference main");
-            }
+            if (strlen(objMap.sName) < 1) SMake_FindMain(&objMap);
+            slog(0, SLOG_LIVE, "Ready to write Makefile");
+
+            nRetVal = SMake_WriteMake(&objMap);
+            if (nRetVal) slog(0, SLOG_LIVE, "Succesfully generated Makefile");
         }
     }
 

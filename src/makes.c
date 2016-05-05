@@ -12,6 +12,35 @@
 #include "makes.h"
 #include "slog.h"
 
+static char *SkipToMain(char *pString)
+{
+    char sMain[4];
+    int i ,x, nFound = 1;
+
+    memset(sMain, 0, sizeof(sMain));
+    strcpy(sMain, "main");
+
+    int nLength = strlen(pString);
+    int nMain = strlen(sMain);
+
+    for (i = 0; i < nLength; i++)
+    {
+        if (pString[i] == sMain[0])
+        {
+            for(x = 1; x < nMain; x++)
+                if (pString[i+x] != sMain[x]) nFound = 0;
+ 
+            if (nFound)
+            {
+                pString += i+x;
+                return pString;
+            }
+        }
+    }
+
+    return pString;
+}
+
 void SMakeMap_Init(SMakeMap *pMap) 
 {
     pMap->pFileList = vector_new(3);
@@ -101,8 +130,10 @@ int SMake_FindMain(SMakeMap *pMap)
             {
                 if (strstr(pLine, " main") != NULL)
                 {
+                    pLine = SkipToMain(pLine);
                     while(*pLine == ' ') pLine++;
-                    if (strstr(pLine, "(") != NULL)
+
+                    if (*pLine == '(')
                     {
                         char sName[128];
                         memset(sName, 0, sizeof(sName));
@@ -121,6 +152,7 @@ int SMake_FindMain(SMakeMap *pMap)
         }
     }
 
+    slog(0, SLOG_WARN, "Can not find main file");
     return 0;
 }
 
@@ -150,7 +182,7 @@ int SMake_WriteMake(SMakeMap *pMap)
         char *pSingleObj = (char*)vector_get(pMap->pObjList, i);
         if (nObjs > 1)
         {
-            if (i > 0) 
+            if (i > 0)
             {
                 if (i == (nObjs - 1)) fprintf(pFile, "\t%s\n\n", pSingleObj);
                 else fprintf(pFile, "\t%s \\\n", pSingleObj);

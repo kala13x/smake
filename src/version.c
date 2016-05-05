@@ -36,11 +36,14 @@ void Greet(const char *pName)
 
 void Usage(const char *pName)
 {
-    printf("Usage: %s [-s <src-path>] [-c <config>] [-v] [-h]\n", pName);
+    printf("Usage: %s [-s <src-path>] [-c <config>] [-f <'flags'>] [-l <'libs'>] [-v] [-h]\n", pName);
     printf("Options are:\n");
-    printf("  -s <src-mac>      # Path of source files\n");
-    printf("  -c <config>       # Config file\n");
-    printf("  -v                # Verbose\n");
-    printf("  -h                # Print version and usage\n");
-    printf("Example: %s -s src -v\n\n", pName);
+    printf("  -s <src-path>      # Path of source files\n");
+    printf("  -c <config>        # Config file\n");
+    printf("  -f <'flags'>       # Compiler flags\n");
+    printf("  -l <'libs'>        # Linked libraries\n");
+    printf("  -p <name>          # Program name\n");
+    printf("  -v                 # Verbose\n");
+    printf("  -h                 # Print version and usage\n");
+    printf("Example: %s -s src -f '-g -Wall' -l 'lpthread'\n\n", pName);
 }
