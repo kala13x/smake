@@ -9,11 +9,72 @@
 #include "stdinc.h"
 #include "vector.h"
 #include "files.h"
+#include "slog.h"
 
-int Files_GetList(char *pPath, vector *pFileList)
+int Files_GetLineNumber(const char *pPath)
+{
+    /* Open templorary file */
+    FILE *fp = fopen(pPath, "r");
+    if (fp != NULL) 
+    {
+        /* Read line-by-line */
+        ssize_t read;
+        size_t len = 0;
+        char *line = NULL;
+        unsigned int nLineNumber = 0;
+        while ((read = getline(&line, &len, fp)) != -1) nLineNumber++;
+
+        /* Cleanup */
+        fclose(fp);
+        if(line) free(line);
+
+        return nLineNumber;
+    }
+
+    return 0;
+}
+
+char* Files_GetLine(const char *pPath, int nLineNumber)
+{
+    unsigned int nLineNo = 0;
+    static char pRetLine[LINE_MAX];
+
+    /* Open templorary file */
+    FILE *fp = fopen(pPath, "r");
+    if (fp != NULL) 
+    {
+        /* Read line-by-line */
+        ssize_t read;
+        size_t len = 0;
+        char *line = NULL;
+        while ((read = getline(&line, &len, fp)) != -1) 
+        {
+            nLineNo++;
+            if (nLineNumber == nLineNo) 
+            {
+                strcpy(pRetLine, line);
+                break;
+            }
+        }
+
+        /* Cleanup */
+        fclose(fp);
+        if(line) free(line);
+
+        return pRetLine;
+    }
+
+    return NULL;
+}
+
+int Files_GetList(const char *pPath, vector *pFileList, int nVerbose)
 {
     DIR *pDir = opendir(pPath);
-    if(pDir == NULL) return 0;
+    if(pDir == NULL)
+    {
+        slog(0, SLOG_ERROR, "Can not open directory: %s", pPath);
+        return 0;
+    }
 
     struct dirent *pEntry;
     int nHaveFiles = -1;
@@ -29,16 +90,23 @@ int Files_GetList(char *pPath, vector *pFileList)
         char *pFileName = (char*)malloc(strlen(pEntry->d_name));
         strcpy(pFileName, pEntry->d_name);
         vector_push(pFileList, (void*)pFileName);
+        if (nVerbose) slog(0, SLOG_DEBUG, "Loaded file: %s", pFileName);
         nHaveFiles = 1;
     }
 
     chdir("..");
     closedir(pDir);
 
-    return nHaveFiles;
+    if (!nHaveFiles)
+    {
+        slog(0, SLOG_ERROR, "Directory is emplty: %s", pPath);
+        return 0;
+    }
+
+    return 1;
 }
 
-int Files_PrintDir(char *pPath, int nDepth)
+int Files_PrintDir(const char *pPath, int nDepth)
 {
     DIR *pDir = opendir(pPath);
     if(pDir == NULL) return 0;

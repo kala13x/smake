@@ -1,5 +1,5 @@
 /*
- *  src/make.h
+ *  src/makes.h
  * 
  *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
  *
@@ -22,13 +22,17 @@ typedef struct {
     vector *pObjList;
     char sFlags[LINE_MAX];
     char sLibs[LINE_MAX];
+    char sPath[PATH_MAX];
     char sName[128];
+    int nVerbose;
 } SMakeMap;
 
 void SMakeMap_Init(SMakeMap *pMap);
 void SMakeMap_Destroy(SMakeMap *pMap);
 
 int SMakeMap_FillObjects(SMakeMap *pMap);
+int SMake_FindMain(SMakeMap *pMap);
+int SMake_WriteMake(SMakeMap *pMap);
 
 /* For include header in CPP code */
 #ifdef __cplusplus

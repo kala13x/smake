@@ -17,8 +17,11 @@
 extern "C" {
 #endif
 
-int Files_GetList(char *pPath, vector *pFileList);
-int Files_PrintDir(char *pPath, int nDepth);
+int Files_GetLineNumber(const char *pPath);
+char* Files_GetLine(const char *pPath, int nLineNumber);
+
+int Files_GetList(const char *pPath, vector *pFileList, int nVerbose);
+int Files_PrintDir(const char *pPath, int nDepth);
 
 /* For include header in CPP code */
 #ifdef __cplusplus

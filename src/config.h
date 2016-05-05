@@ -9,7 +9,7 @@
 #ifndef __SMAKE_CONFIG_H__
 #define __SMAKE_CONFIG_H__
 
-#include "make.h"
+#include "makes.h"
 
 /* For include header in CPP code */
 #ifdef __cplusplus

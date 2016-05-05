@@ -9,7 +9,7 @@ OBJS = smake.o \
 		vector.o \
 		version.o \
 		config.o \
-		make.o \
+		makes.o \
 		files.o \
 		slog.o 
 

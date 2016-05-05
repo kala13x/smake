@@ -11,7 +11,7 @@
 #include "version.h"
 #include "config.h"
 #include "files.h"
-#include "make.h"
+#include "makes.h"
 #include "slog.h"
 
 typedef struct {
@@ -66,33 +66,33 @@ int main(int argc, char *argv[])
 
     SMakeMap objMap;
     SMakeMap_Init(&objMap);
+    strcpy(objMap.sPath, info.sPathSrc);
+    objMap.nVerbose = info.nVerbose;
 
-    int nRetVal = Files_GetList(info.sPathSrc, objMap.pFileList);
-    if (!nRetVal) 
+    int nRetVal = Files_GetList(info.sPathSrc, objMap.pFileList, info.nVerbose);
+    if (nRetVal) 
     {
-        slog(0, SLOG_ERROR, "Can not open directory: %s", info.sPathSrc);
-        SMakeMap_Destroy(&objMap);
-        exit(EXIT_FAILURE);
-    }
-    else if (nRetVal < 0)
-    {
-        slog(0, SLOG_ERROR, "Directory is emplty: %s", info.sPathSrc);
-        SMakeMap_Destroy(&objMap);
-        exit(EXIT_FAILURE);
-    }
-    slog(0, SLOG_LIVE, "File list initialization done");
+        slog(0, SLOG_LIVE, "File list initialization done");
+        nRetVal = SMakeMap_FillObjects(&objMap);
+        if (nRetVal)
+        {
+            slog(0, SLOG_LIVE, "Object list initialization done");
 
-    nRetVal = SMakeMap_FillObjects(&objMap);
-    if (!nRetVal) 
-    {
-        slog(0, SLOG_ERROR, "Unable to find source files at: %s", info.sPathSrc);
-        SMakeMap_Destroy(&objMap);
-        exit(EXIT_FAILURE);
-    }
-    slog(0, SLOG_LIVE, "Object list initialization done");
+            nRetVal = ConfigFile_Load(info.sCfgFile, &objMap);
+            if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
 
-    nRetVal = ConfigFile_Load(info.sCfgFile, &objMap);
-    if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
+            if (strlen(objMap.sName) < 1) 
+            {
+                nRetVal = SMake_FindMain(&objMap);
+                if (nRetVal) 
+                {
+                    nRetVal = SMake_WriteMake(&objMap);
+                    if (nRetVal) slog(0, SLOG_LIVE, "Succesfully generated Makefile");
+                }
+                else slog(0, SLOG_ERROR, "Undefined reference main");
+            }
+        }
+    }
 
     SMakeMap_Destroy(&objMap);
     return 0;
