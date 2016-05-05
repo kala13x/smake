@@ -26,7 +26,9 @@ int Files_GetList(char *pPath, vector *pFileList)
            strcmp("..", pEntry->d_name) == 0)
            continue;
 
-        vector_push(pFileList, (void*)pEntry->d_name);
+        char *pFileName = (char*)malloc(strlen(pEntry->d_name));
+        strcpy(pFileName, pEntry->d_name);
+        vector_push(pFileList, (void*)pFileName);
         nHaveFiles = 1;
     }
 

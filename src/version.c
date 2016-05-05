@@ -36,9 +36,10 @@ void Greet(const char *pName)
 
 void Usage(const char *pName)
 {
-    printf("Usage: %s [-s <src-path>] [-v] [-h]\n", pName);
+    printf("Usage: %s [-s <src-path>] [-c <config>] [-v] [-h]\n", pName);
     printf("Options are:\n");
     printf("  -s <src-mac>      # Path of source files\n");
+    printf("  -c <config>       # Config file\n");
     printf("  -v                # Verbose\n");
     printf("  -h                # Print version and usage\n");
     printf("Example: %s -s src -v\n\n", pName);

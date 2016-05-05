@@ -14,6 +14,8 @@
 vector *vector_new(int size) 
 {
     vector *pv = malloc(sizeof(vector));
+    if (!pv) return NULL;
+
     pv->length = size;
     pv->current = 0;
     pv->storage = calloc(size, sizeof(void *));

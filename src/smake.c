@@ -9,17 +9,22 @@
 #include "stdinc.h"
 #include "vector.h"
 #include "version.h"
+#include "config.h"
 #include "files.h"
+#include "make.h"
 #include "slog.h"
 
 typedef struct {
     char sPathSrc[PATH_MAX];
+    char sCfgFile[PATH_MAX];
     int nVerbose;
 } SMakeInfo;
 
 void SMake_InitInfo(SMakeInfo *pInf)
 {
+    memset(pInf->sCfgFile, 0, PATH_MAX);
     memset(pInf->sPathSrc, 0, PATH_MAX);
+    strcpy(pInf->sCfgFile, "smake.cfg");
     strcpy(pInf->sPathSrc, ".");
     pInf->nVerbose = 0;
 }
@@ -33,6 +38,9 @@ static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
         {
             case 's':
                 strcpy(pInfo->sPathSrc, optarg);
+                break;
+            case 'c':
+                strcpy(pInfo->sCfgFile, optarg);
                 break;
             case 'v':
                 pInfo->nVerbose = 1;
@@ -49,28 +57,43 @@ static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
 
 int main(int argc, char *argv[])
 {
-    Greet("Sun-Makefile");
+    Greet("Simple-Make");
     slog_init("smake", NULL, 2, 2, 0);
 
     SMakeInfo info;
     SMake_InitInfo(&info);
-    if (ParseArguments(argc, argv, &info)) 
-        return 0;
+    if (ParseArguments(argc, argv, &info)) return 0;
 
-    vector *pFileList = vector_new(3);
-    int nRetVal = Files_GetList(info.sPathSrc, pFileList);
-    if (nRetVal > 0)
+    SMakeMap objMap;
+    SMakeMap_Init(&objMap);
+
+    int nRetVal = Files_GetList(info.sPathSrc, objMap.pFileList);
+    if (!nRetVal) 
     {
-        int i, nEntryes = vector_size(pFileList);
-        for (i = 0; i < nEntryes; i++)
-        {
-            char *pFile = (char*)vector_get(pFileList, i);
-            printf("%s\n", pFile);
-        }
+        slog(0, SLOG_ERROR, "Can not open directory: %s", info.sPathSrc);
+        SMakeMap_Destroy(&objMap);
+        exit(EXIT_FAILURE);
     }
-    else if (!nRetVal) slog(0, SLOG_ERROR, "Can not open directory: %s", info.sPathSrc);
-    else slog(0, SLOG_ERROR, "Directory is emplty: %s", info.sPathSrc);
+    else if (nRetVal < 0)
+    {
+        slog(0, SLOG_ERROR, "Directory is emplty: %s", info.sPathSrc);
+        SMakeMap_Destroy(&objMap);
+        exit(EXIT_FAILURE);
+    }
+    slog(0, SLOG_LIVE, "File list initialization done");
 
-    vector_free(pFileList);
+    nRetVal = SMakeMap_FillObjects(&objMap);
+    if (!nRetVal) 
+    {
+        slog(0, SLOG_ERROR, "Unable to find source files at: %s", info.sPathSrc);
+        SMakeMap_Destroy(&objMap);
+        exit(EXIT_FAILURE);
+    }
+    slog(0, SLOG_LIVE, "Object list initialization done");
+
+    nRetVal = ConfigFile_Load(info.sCfgFile, &objMap);
+    if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
+
+    SMakeMap_Destroy(&objMap);
     return 0;
 }
