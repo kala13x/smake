@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# Binary files
+bin/smake
+smake
