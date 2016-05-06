@@ -49,7 +49,7 @@ static char *WhiteSpace(const int nLength)
 void Usage(const char *pName)
 {
     int nLength = strlen(pName) + 6;
-    printf("Usage: %s [-s <src-path>] [-c <config-path>]\n", pName);
+    printf("Usage: %s [-s <src-path>] [-c <config-path>] [-x]\n", pName);
     printf(" %s [-f <'flags'>] [-l <'libs'>] [-v] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -s <src-path>       # Path of source files\n");
@@ -58,6 +58,7 @@ void Usage(const char *pName)
     printf("  -l <'libs'>         # Linked libraries\n");
     printf("  -p <name>           # Program name\n");
     printf("  -v                  # Verbose\n");
+    printf("  -x                  # If sources are CPP files\n");
     printf("  -h                  # Print version and usage\n\n");
     printf("Example: %s -s src -f '-Wall' -l '-lpthread'\n\n", pName);
 }

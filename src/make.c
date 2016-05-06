@@ -60,6 +60,7 @@ void SMakeMap_Init(SMakeMap *pMap)
     strcpy(pMap->sCfgFile, "smake.cfg");
     strcpy(pMap->sPath, ".");
     pMap->nVerbose = 0;
+    pMap->nCPP = 0;
 }
 
 void SMakeMap_Destroy(SMakeMap *pMap)
@@ -166,14 +167,29 @@ int SMake_WriteMake(SMakeMap *pMap)
     memset(sMakefile, 0, PATH_MAX);
     sprintf(sMakefile, "%s/Makefile", pMap->sPath);
 
+    char sCompiler[16], sLinker[16];
+    memset(sCompiler, 0, sizeof(sCompiler));
+    memset(sLinker, 0, sizeof(sLinker));
+
+    if (pMap->nCPP)
+    {
+        strcpy(sCompiler, "CXX");
+        strcpy(sLinker, "CXXFLAGS");
+    }
+    else 
+    {
+        strcpy(sCompiler, "CC");
+        strcpy(sLinker, "CFLAGS");
+    }
+
     FILE *pFile = fopen(sMakefile, "w");
-    if (!pFile) 
+    if (!pFile)
     {
         slog(0, SLOG_ERROR, "Can not open destination file: %s", sMakefile);
         return 0;
     }
 
-    fprintf(pFile, "CFLAGS = %s\n", pMap->sFlags);
+    fprintf(pFile, "%s = %s\n", sLinker, pMap->sFlags);
     fprintf(pFile, "LIBS = %s\n\n", pMap->sLibs);
     fprintf(pFile, "OBJS = ");
 
@@ -196,10 +212,28 @@ int SMake_WriteMake(SMakeMap *pMap)
         else fprintf(pFile, "%s\n", pSingleObj);
     }
 
-    fprintf(pFile, ".c.o:\n");
-    fprintf(pFile, "\t$(CC) $(CFLAGS) -c $< $(LIBS)\n\n");
+    int nStatic, nShared;
+    nStatic = nShared = 0;
+    if (strstr(pMap->sName, ".a") != NULL) nStatic = 1;
+    if (strstr(pMap->sName, ".so") != NULL) nShared = 1;
+
+    if (nStatic && nShared)
+    {
+        slog(0, SLOG_ERROR, "Invalid filename: %s", pMap->sName);
+        slog(0, SLOG_INFO, "Only one extension is allowed");
+        fclose(pFile);
+        remove(sMakefile);
+        return 0;
+    }
+
+    fprintf(pFile, ".%s.o:\n", pMap->nCPP ? "cpp" : "c");
+    fprintf(pFile, "\t$(%s) $(%s) -c $< $(LIBS)\n\n", sCompiler, sLinker);
     fprintf(pFile, "%s: $(OBJS)\n", pMap->sName);
-    fprintf(pFile, "\t$(CC) $(CFLAGS) -o %s $(OBJS) $(LIBS)\n\n", pMap->sName);
+
+    if (nStatic) fprintf(pFile, "\t$(AR) rcs -o %s $(OBJS)\n\n", pMap->sName);
+    else if (nShared) fprintf(pFile, "\t$(%s) -shared -o %s $(OBJS)\n\n", sCompiler, pMap->sName);
+    else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n\n", sCompiler, sLinker, pMap->sName);
+
     fprintf(pFile, ".PHONY: clean\nclean:\n");
     fprintf(pFile, "\t$(RM) %s $(OBJS)\n", pMap->sName);
     fclose(pFile);

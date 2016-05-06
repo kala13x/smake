@@ -17,7 +17,7 @@
 static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 {
     int c;
-    while ( (c = getopt(argc, argv, "s:c:f:l:p:v1:h1")) != -1) 
+    while ( (c = getopt(argc, argv, "s:c:f:l:p:v1:x1:h1")) != -1) 
     {
         switch (c)
         {
@@ -38,6 +38,9 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
                 break;
             case 'v':
                 pMap->nVerbose = 1;
+                break;
+            case 'x':
+                pMap->nCPP = 1;
                 break;
             case 'h':
             default:

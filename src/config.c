@@ -38,6 +38,10 @@ int ConfigFile_Load(const char *pPath, SMakeMap *pMap)
         {
             strcpy(pMap->sLibs, sArg);
         }
+        else if (strcmp(sName, "CXX") == 0)
+        {
+            pMap->nCPP = atoi(sArg);
+        }
     }
 
     fclose(pFile);
