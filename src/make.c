@@ -12,13 +12,13 @@
 #include "make.h"
 #include "slog.h"
 
-static char *SkipToMain(char *pString)
+static char *SkipToStr(char *pString, const char *pStr)
 {
-    char sMain[4];
+    char sMain[256];
     int i ,x, nFound = 1;
 
     memset(sMain, 0, sizeof(sMain));
-    strcpy(sMain, "main");
+    strcpy(sMain, pStr);
 
     int nLength = strlen(pString);
     int nMain = strlen(sMain);
@@ -101,13 +101,17 @@ int SMakeMap_FillObjects(SMakeMap *pMap)
             memset(sFile, 0, PATH_MAX);
             strcpy(sFile, pFile);
 
-            char *pObj = strtok(sFile, ".");
-            char *pObjName = (char*)malloc(strlen(pObj));
-            sprintf(pObjName, "%s.o", pObj);
+            char *pExt = SkipToStr(sFile, sExt);
+            if (*pExt == '\0') 
+            {
+                char *pObj = strtok(sFile, ".");
+                char *pObjName = (char*)malloc(strlen(pObj));
+                sprintf(pObjName, "%s.o", pObj);
 
-            vector_push(pMap->pObjList, (void*)pObjName);
-            if (pMap->nVerbose) slog(0, SLOG_DEBUG, "Loaded object: %s", pObjName);
-            nFilesPushed++;
+                vector_push(pMap->pObjList, (void*)pObjName);
+                if (pMap->nVerbose) slog(0, SLOG_DEBUG, "Loaded object: %s", pObjName);
+                nFilesPushed++;
+            }
         }
     }
 
@@ -139,7 +143,7 @@ int SMake_FindMain(SMakeMap *pMap)
             {
                 if (strstr(pLine, " main") != NULL)
                 {
-                    pLine = SkipToMain(pLine);
+                    pLine = SkipToStr(pLine, " main");
                     while(*pLine == ' ') pLine++;
 
                     if (*pLine == '(')
