@@ -20,6 +20,7 @@ extern "C" {
 typedef struct {
     vector *pFileList;
     vector *pObjList;
+    char sCfgFile[PATH_MAX];
     char sFlags[LINE_MAX];
     char sLibs[LINE_MAX];
     char sPath[PATH_MAX];

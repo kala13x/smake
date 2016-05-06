@@ -8,6 +8,7 @@
 
 #include "stdinc.h"
 #include "vector.h"
+#include "makes.h"
 #include "files.h"
 #include "slog.h"
 
@@ -67,18 +68,18 @@ char* Files_GetLine(const char *pPath, int nLineNumber)
     return NULL;
 }
 
-int Files_GetList(const char *pPath, vector *pFileList, int nVerbose)
+int Files_GetList(SMakeMap *pMap)
 {
-    DIR *pDir = opendir(pPath);
+    DIR *pDir = opendir(pMap->sPath);
     if(pDir == NULL)
     {
-        slog(0, SLOG_ERROR, "Can not open directory: %s", pPath);
+        slog(0, SLOG_ERROR, "Can not open directory: %s", pMap->sPath);
         return 0;
     }
 
     struct dirent *pEntry;
     int nHaveFiles = -1;
-    chdir(pPath);
+    chdir(pMap->sPath);
 
     while((pEntry = readdir(pDir)) != NULL) 
     {
@@ -89,8 +90,8 @@ int Files_GetList(const char *pPath, vector *pFileList, int nVerbose)
 
         char *pFileName = (char*)malloc(strlen(pEntry->d_name));
         strcpy(pFileName, pEntry->d_name);
-        vector_push(pFileList, (void*)pFileName);
-        if (nVerbose) slog(0, SLOG_DEBUG, "Loaded file: %s", pFileName);
+        vector_push(pMap->pFileList, (void*)pFileName);
+        if (pMap->nVerbose) slog(0, SLOG_DEBUG, "Loaded file: %s", pFileName);
         nHaveFiles = 1;
     }
 
@@ -99,7 +100,7 @@ int Files_GetList(const char *pPath, vector *pFileList, int nVerbose)
 
     if (!nHaveFiles)
     {
-        slog(0, SLOG_ERROR, "Directory is emplty: %s", pPath);
+        slog(0, SLOG_ERROR, "Directory is emplty: %s", pMap->sPath);
         return 0;
     }
 

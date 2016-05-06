@@ -14,22 +14,7 @@
 #include "makes.h"
 #include "slog.h"
 
-typedef struct {
-    char sPathSrc[PATH_MAX];
-    char sCfgFile[PATH_MAX];
-    int nVerbose;
-} SMakeInfo;
-
-void SMake_InitInfo(SMakeInfo *pInf)
-{
-    memset(pInf->sCfgFile, 0, PATH_MAX);
-    memset(pInf->sPathSrc, 0, PATH_MAX);
-    strcpy(pInf->sCfgFile, "smake.cfg");
-    strcpy(pInf->sPathSrc, ".");
-    pInf->nVerbose = 0;
-}
-
-static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
+static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 {
     int c;
     while ( (c = getopt(argc, argv, "s:c:f:l:p:v1:h1")) != -1) 
@@ -37,22 +22,22 @@ static int ParseArguments(int argc, char *argv[], SMakeInfo *pInfo)
         switch (c)
         {
             case 's':
-                strcpy(pInfo->sPathSrc, optarg);
+                strcpy(pMap->sPath, optarg);
                 break;
             case 'c':
-                strcpy(pInfo->sCfgFile, optarg);
+                strcpy(pMap->sCfgFile, optarg);
                 break;
             case 'f':
-                printf("%s\n",optarg);
+                strcpy(pMap->sFlags, optarg);
                 break;
             case 'l':
-                printf("%s\n",optarg);
+                strcpy(pMap->sLibs, optarg);
                 break;
             case 'p':
-                printf("%s\n",optarg);
+                strcpy(pMap->sName, optarg);
                 break;
             case 'v':
-                pInfo->nVerbose = 1;
+                pMap->nVerbose = 1;
                 break;
             case 'h':
             default:
@@ -69,16 +54,11 @@ int main(int argc, char *argv[])
     Greet("Simple-Make");
     slog_init("smake", NULL, 2, 2, 0);
 
-    SMakeInfo info;
-    SMake_InitInfo(&info);
-    if (ParseArguments(argc, argv, &info)) return 0;
-
     SMakeMap objMap;
     SMakeMap_Init(&objMap);
-    strcpy(objMap.sPath, info.sPathSrc);
-    objMap.nVerbose = info.nVerbose;
+    if (ParseArguments(argc, argv, &objMap)) return 0;
 
-    int nRetVal = Files_GetList(info.sPathSrc, objMap.pFileList, info.nVerbose);
+    int nRetVal = Files_GetList(&objMap);
     if (nRetVal) 
     {
         slog(0, SLOG_LIVE, "File list initialization done");
@@ -87,7 +67,7 @@ int main(int argc, char *argv[])
         {
             slog(0, SLOG_LIVE, "Object list initialization done");
 
-            nRetVal = ConfigFile_Load(info.sCfgFile, &objMap);
+            nRetVal = ConfigFile_Load(objMap.sCfgFile, &objMap);
             if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
 
             if (strlen(objMap.sName) < 1) SMake_FindMain(&objMap);

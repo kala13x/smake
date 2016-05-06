@@ -10,7 +10,7 @@
 #define __SMAKE_FILES_H__
 
 #include "stdinc.h"
-#include "vector.h"
+#include "makes.h"
 
 /* For include header in CPP code */
 #ifdef __cplusplus
@@ -20,7 +20,7 @@ extern "C" {
 int Files_GetLineNumber(const char *pPath);
 char* Files_GetLine(const char *pPath, int nLineNumber);
 
-int Files_GetList(const char *pPath, vector *pFileList, int nVerbose);
+int Files_GetList(SMakeMap *pMap);
 int Files_PrintDir(const char *pPath, int nDepth);
 
 /* For include header in CPP code */

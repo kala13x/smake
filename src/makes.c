@@ -53,9 +53,12 @@ void SMakeMap_Init(SMakeMap *pMap)
     }
 
     memset(pMap->sName, 0, sizeof(pMap->sName));
+    memset(pMap->sCfgFile, 0, PATH_MAX);
     memset(pMap->sFlags, 0, LINE_MAX);
     memset(pMap->sLibs, 0, LINE_MAX);
     memset(pMap->sPath, 0, PATH_MAX);
+    strcpy(pMap->sCfgFile, "smake.cfg");
+    strcpy(pMap->sPath, ".");
     pMap->nVerbose = 0;
 }
 
