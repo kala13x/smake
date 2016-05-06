@@ -11,7 +11,7 @@
 #include "version.h"
 #include "config.h"
 #include "files.h"
-#include "makes.h"
+#include "make.h"
 #include "slog.h"
 
 static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
@@ -65,8 +65,6 @@ int main(int argc, char *argv[])
         nRetVal = SMakeMap_FillObjects(&objMap);
         if (nRetVal)
         {
-            slog(0, SLOG_LIVE, "Object list initialization done");
-
             nRetVal = ConfigFile_Load(objMap.sCfgFile, &objMap);
             if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
 

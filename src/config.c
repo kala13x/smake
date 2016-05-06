@@ -8,7 +8,7 @@
 
 #include "stdinc.h"
 #include "config.h"
-#include "makes.h"
+#include "make.h"
 #include "slog.h"
 
 int ConfigFile_Load(const char *pPath, SMakeMap *pMap)

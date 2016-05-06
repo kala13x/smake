@@ -8,8 +8,8 @@
 
 #include "stdinc.h"
 #include "vector.h"
-#include "makes.h"
 #include "files.h"
+#include "make.h"
 #include "slog.h"
 
 int Files_GetLineNumber(const char *pPath)

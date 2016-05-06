@@ -6,11 +6,11 @@ VPATH = src
 INSTALL = bin
 
 OBJS = smake.o \
-		vector.o \
 		version.o \
+		vector.o \
 		config.o \
-		makes.o \
 		files.o \
+		make.o \
 		slog.o 
 
 .c.o: $(VPATH)

@@ -1,5 +1,5 @@
 /*
- *  src/makes.h
+ *  src/make.h
  * 
  *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
  *

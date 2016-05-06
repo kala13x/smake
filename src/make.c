@@ -1,5 +1,5 @@
 /*
- *  src/makes.h
+ *  src/make.h
  * 
  *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
  *
@@ -9,7 +9,7 @@
 #include "stdinc.h"
 #include "vector.h"
 #include "files.h"
-#include "makes.h"
+#include "make.h"
 #include "slog.h"
 
 static char *SkipToMain(char *pString)
@@ -112,6 +112,7 @@ int SMakeMap_FillObjects(SMakeMap *pMap)
         return 0;
     }
 
+    slog(0, SLOG_LIVE, "Object list initialization done");
     return 1;
 }
 

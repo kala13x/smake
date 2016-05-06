@@ -10,7 +10,7 @@
 #define __SMAKE_FILES_H__
 
 #include "stdinc.h"
-#include "makes.h"
+#include "make.h"
 
 /* For include header in CPP code */
 #ifdef __cplusplus
