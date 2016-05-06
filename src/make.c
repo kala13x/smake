@@ -58,7 +58,7 @@ void SMakeMap_Init(SMakeMap *pMap)
     memset(pMap->sLibs, 0, LINE_MAX);
     memset(pMap->sPath, 0, PATH_MAX);
     strcpy(pMap->sCfgFile, "smake.cfg");
-    strcpy(pMap->sPath, ".");
+    getcwd(pMap->sPath, PATH_MAX);
     pMap->nVerbose = 0;
     pMap->nCPP = 0;
 }
@@ -85,13 +85,17 @@ void SMakeMap_Destroy(SMakeMap *pMap)
 
 int SMakeMap_FillObjects(SMakeMap *pMap)
 {
+    char sExt[6];
     int nFilesPushed = 0;
     int i, nFiles = vector_size(pMap->pFileList);
+
+    memset(sExt, 0, sizeof(sExt));
+    sprintf(sExt, ".%s", pMap->nCPP ? "cpp" : "c");
 
     for(i = 0; i < nFiles; i++)
     {
         char *pFile = (char*)vector_get(pMap->pFileList, i);
-        if (strstr(pFile, ".c") != NULL) 
+        if (strstr(pFile, sExt) != NULL)
         {
             char sFile[PATH_MAX];
             memset(sFile, 0, PATH_MAX);
