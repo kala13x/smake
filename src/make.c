@@ -59,7 +59,7 @@ void SMakeMap_Init(SMakeMap *pMap)
     memset(pMap->sPath, 0, PATH_MAX);
     strcpy(pMap->sCfgFile, "smake.cfg");
     getcwd(pMap->sPath, PATH_MAX);
-    pMap->nVerbose = 0;
+    pMap->nVerbose = 1;
     pMap->nVPath = 0;
     pMap->nCPP = 0;
 }
@@ -110,7 +110,7 @@ int SMakeMap_FillObjects(SMakeMap *pMap)
                 sprintf(pObjName, "%s.o", pObj);
 
                 vector_push(pMap->pObjList, (void*)pObjName);
-                if (pMap->nVerbose) slog(0, SLOG_DEBUG, "Loaded object: %s", pObjName);
+                if (pMap->nVerbose > 1) slog(0, SLOG_DEBUG, "Loaded object: %s", pObjName);
                 nFilesPushed++;
             }
         }
@@ -164,7 +164,7 @@ int SMake_FindMain(SMakeMap *pMap)
                         char *pName = strtok(sName, ".");
                         strcpy(pMap->sName, pName);
 
-                        if (pMap->nVerbose)
+                        if (pMap->nVerbose > 1)
                             slog(0, SLOG_DEBUG, "Detected main file: %s", sFile);
 
                         return 1;

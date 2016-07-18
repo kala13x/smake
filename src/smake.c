@@ -17,7 +17,7 @@
 static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 {
     int nChar, nSrc = 0;
-    while ( (nChar = getopt(argc, argv, "s:c:f:l:p:d1:v1:x1:h1")) != -1) 
+    while ( (nChar = getopt(argc, argv, "s:c:f:l:p:d1:v:x1:h1")) != -1) 
     {
         switch (nChar)
         {
@@ -36,17 +36,18 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
             case 'p':
                 strcpy(pMap->sName, optarg);
                 break;
+            case 'v':
+                pMap->nVerbose = atoi(optarg);
+                break;
             case 'd':
                 pMap->nVPath = 1;
-                break;
-            case 'v':
-                pMap->nVerbose = 1;
                 break;
             case 'x':
                 pMap->nCPP = 1;
                 break;
             case 'h':
             default:
+                Greet("Simple-Make");
                 Usage(argv[0]);
                 return -1;
         }
@@ -54,6 +55,7 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 
     if (pMap->nVPath && !nSrc)
     {
+        Greet("Simple-Make");
         slog(0, SLOG_ERROR, "VPATH (-d) works with argument -s only\n");
         Usage(argv[0]);
         return -1;
@@ -64,12 +66,15 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 
 int main(int argc, char *argv[])
 {
-    Greet("Simple-Make");
     slog_init("smake", NULL, 2, 2, 0);
 
     SMakeMap objMap;
     SMakeMap_Init(&objMap);
     if (ParseArguments(argc, argv, &objMap)) return 0;
+
+    int nSilent = objMap.nVerbose < 1 ? 1 : 0;
+    if (!nSilent) Greet("Simple-Make");
+    slog_silent(nSilent);
 
     int nRetVal = Files_GetList(&objMap);
     if (nRetVal) 

@@ -175,6 +175,15 @@ char* slog_get(SlogDate *pDate, char *pMsg, ...)
 
 void slog(int nLevel, int nFlag, const char *pMsg, ...)
 {
+    if (slg.nSilent)
+    {
+        if (nFlag == SLOG_DEBUG || 
+            nFlag == SLOG_LIVE)
+        {
+            return;
+        }
+    }
+
     /* Lock for safe */
     if (slg.nTdSafe) 
     {
@@ -282,6 +291,11 @@ void slog(int nLevel, int nFlag, const char *pMsg, ...)
     }
 }
 
+void slog_silent(int nSilent)
+{
+    slg.nSilent = nSilent;
+}
+
 void slog_init(const char* pName, const char* pConf, int nLevel, int nFileLevel, int nTdSafe)
 {
     /* Set up default values */
@@ -289,6 +303,7 @@ void slog_init(const char* pName, const char* pConf, int nLevel, int nFileLevel,
     slg.nFileLevel = nFileLevel;
     slg.nTdSafe = nTdSafe;
     slg.nFileStamp = 1;
+    slg.nSilent = 0;
     slg.nToFile = 0;
     slg.nPretty = 0;
 

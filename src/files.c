@@ -91,7 +91,7 @@ int Files_GetList(SMakeMap *pMap)
         char *pFileName = (char*)malloc(strlen(pEntry->d_name));
         strcpy(pFileName, pEntry->d_name);
         vector_push(pMap->pFileList, (void*)pFileName);
-        if (pMap->nVerbose) slog(0, SLOG_DEBUG, "Loaded file: %s", pFileName);
+        if (pMap->nVerbose > 1) slog(0, SLOG_DEBUG, "Loaded file: %s", pFileName);
         nHaveFiles = 1;
     }
 

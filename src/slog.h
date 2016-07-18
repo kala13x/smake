@@ -67,6 +67,7 @@ typedef struct {
     short nToFile;
     short nPretty;
     short nTdSafe;
+    short nSilent;
 } SlogFlags;
 
 /* Date variables */
@@ -83,6 +84,7 @@ typedef struct {
 const char* slog_version(int nMin);
 char* slog_clr(const char* pColor, char* pStr, ...);
 char* slog_get(SlogDate *pDate, char *pMsg, ...);
+void slog_silent(int nSilent);
 
 void slog_init(const char* pName, const char* pConf, int nLevel, int nFileLevel, int nTdSafe);
 void slog(int level, int flag, const char *pMsg, ...);
