@@ -8,7 +8,7 @@
 
 #define VERSION_MAX     0
 #define VERSION_MIN     1
-#define BUILD_NUMBER    5
+#define BUILD_NUMBER    6
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_

@@ -1,4 +1,4 @@
-## Simple-Make - Version 0.1 build 5
+## Simple-Make - Version 0.1 build 6
 SMake is small and simple tool which helps developers to automatically generate Makefiles for C/C++ projects. Software is written for educational purposes and is distributed in the hope that it will be useful for anyone interested in this field.
 
 ### Installation
@@ -18,6 +18,7 @@ If you want to use smake, just cd to the source directory of your project and wr
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
   -p <name>           # Program name
+  -d                  # Virtual directory (VPATH)
   -v                  # Verbose
   -x                  # If sources are CPP files
   -h                  # Print version and usage

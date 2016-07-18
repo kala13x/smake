@@ -60,6 +60,7 @@ void SMakeMap_Init(SMakeMap *pMap)
     strcpy(pMap->sCfgFile, "smake.cfg");
     getcwd(pMap->sPath, PATH_MAX);
     pMap->nVerbose = 0;
+    pMap->nVPath = 0;
     pMap->nCPP = 0;
 }
 
@@ -117,7 +118,15 @@ int SMakeMap_FillObjects(SMakeMap *pMap)
 
     if (!nFilesPushed)
     {
-        slog(0, SLOG_ERROR, "Unable to find source files at: %s", pMap->sPath);
+        slog(0, SLOG_WARN, "Unable to find source (%s) files at: %s", sExt, pMap->sPath);
+
+        if (!pMap->nCPP)
+        {
+            slog(0, SLOG_LIVE, "Now will try to find .cpp files");
+            pMap->nCPP = 1;
+            return SMakeMap_FillObjects(pMap);
+        }
+
         return 0;
     }
 
@@ -173,7 +182,9 @@ int SMake_WriteMake(SMakeMap *pMap)
 {
     char sMakefile[PATH_MAX];
     memset(sMakefile, 0, PATH_MAX);
-    sprintf(sMakefile, "%s/Makefile", pMap->sPath);
+
+    if (pMap->nVPath) sprintf(sMakefile, "Makefile");
+    else sprintf(sMakefile, "%s/Makefile", pMap->sPath);
 
     char sCompiler[16], sLinker[16];
     memset(sCompiler, 0, sizeof(sCompiler));
@@ -234,6 +245,7 @@ int SMake_WriteMake(SMakeMap *pMap)
         return 0;
     }
 
+    if (pMap->nVPath) fprintf(pFile, "VPATH = %s\n\n", pMap->sPath);
     fprintf(pFile, ".%s.o:\n", pMap->nCPP ? "cpp" : "c");
     fprintf(pFile, "\t$(%s) $(%s) -c $< $(LIBS)\n\n", sCompiler, sLinker);
     fprintf(pFile, "%s: $(OBJS)\n", pMap->sName);

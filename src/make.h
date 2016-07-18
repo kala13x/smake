@@ -26,6 +26,7 @@ typedef struct {
     char sPath[PATH_MAX];
     char sName[128];
     int nVerbose;
+    int nVPath;
     int nCPP;
 } SMakeMap;
 

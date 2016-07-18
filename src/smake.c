@@ -16,13 +16,13 @@
 
 static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 {
-    int c;
-    while ( (c = getopt(argc, argv, "s:c:f:l:p:v1:x1:h1")) != -1) 
+    int nChar, nSrc = 0;
+    while ( (nChar = getopt(argc, argv, "s:c:f:l:p:d1:v1:x1:h1")) != -1) 
     {
-        switch (c)
+        switch (nChar)
         {
             case 's':
-                strcpy(pMap->sPath, optarg);
+                strcpy(pMap->sPath, optarg); nSrc = 1;
                 break;
             case 'c':
                 strcpy(pMap->sCfgFile, optarg);
@@ -36,6 +36,9 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
             case 'p':
                 strcpy(pMap->sName, optarg);
                 break;
+            case 'd':
+                pMap->nVPath = 1;
+                break;
             case 'v':
                 pMap->nVerbose = 1;
                 break;
@@ -47,6 +50,13 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
                 Usage(argv[0]);
                 return -1;
         }
+    }
+
+    if (pMap->nVPath && !nSrc)
+    {
+        slog(0, SLOG_ERROR, "VPATH (-d) works with argument -s only\n");
+        Usage(argv[0]);
+        return -1;
     }
 
     return 0;
