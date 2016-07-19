@@ -34,6 +34,14 @@ int ConfigFile_Load(const char *pPath, SMakeMap *pMap)
         {
             strcpy(pMap->sFlags, sArg);
         }
+        else if (strcmp(sName, "BUILD") == 0)
+        {
+            strcpy(pMap->sBuild, sArg);
+        }
+        else if (strcmp(sName, "INSTALL") == 0)
+        {
+            strcpy(pMap->sInstall, sArg);
+        }
         else if (strcmp(sName, "LIBS") == 0)
         {
             strcpy(pMap->sLibs, sArg);

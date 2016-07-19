@@ -53,7 +53,9 @@ void SMakeMap_Init(SMakeMap *pMap)
     }
 
     memset(pMap->sName, 0, sizeof(pMap->sName));
+    memset(pMap->sInstall, 0, PATH_MAX);
     memset(pMap->sCfgFile, 0, PATH_MAX);
+    memset(pMap->sBuild, 0, PATH_MAX);
     memset(pMap->sFlags, 0, LINE_MAX);
     memset(pMap->sLibs, 0, LINE_MAX);
     memset(pMap->sPath, 0, PATH_MAX);
@@ -118,11 +120,8 @@ int SMakeMap_FillObjects(SMakeMap *pMap)
 
     if (!nFilesPushed)
     {
-        slog(0, SLOG_WARN, "Unable to find source (%s) files at: %s", sExt, pMap->sPath);
-
         if (!pMap->nCPP)
         {
-            slog(0, SLOG_LIVE, "Now will try to find .cpp files");
             pMap->nCPP = 1;
             return SMakeMap_FillObjects(pMap);
         }
@@ -245,14 +244,37 @@ int SMake_WriteMake(SMakeMap *pMap)
         return 0;
     }
 
-    if (pMap->nVPath) fprintf(pFile, "VPATH = %s\n\n", pMap->sPath);
+    int nBuild = strlen(pMap->sBuild) > 2 ? 1 : 0;
+    int nInstall = strlen(pMap->sInstall) > 2 ? 1 : 0;
+
+    if (nBuild) fprintf(pFile, "BUILD = %s\n", pMap->sBuild);
+    if (nInstall) fprintf(pFile, "INSTALL = %s\n", pMap->sInstall);
+    if (pMap->nVPath) fprintf(pFile, "VPATH = %s\n", pMap->sPath);
+    fprintf(pFile, "\n");
+
     fprintf(pFile, ".%s.o:\n", pMap->nCPP ? "cpp" : "c");
     fprintf(pFile, "\t$(%s) $(%s) -c $< $(LIBS)\n\n", sCompiler, sLinker);
     fprintf(pFile, "%s: $(OBJS)\n", pMap->sName);
 
     if (nStatic) fprintf(pFile, "\t$(AR) rcs -o %s $(OBJS)\n\n", pMap->sName);
     else if (nShared) fprintf(pFile, "\t$(%s) -shared -o %s $(OBJS)\n\n", sCompiler, pMap->sName);
-    else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n\n", sCompiler, sLinker, pMap->sName);
+    else 
+    {
+        if (nBuild)
+        {
+            fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n", sCompiler, sLinker, pMap->sName);
+            fprintf(pFile, "\t@test -d $(BUILD) || mkdir $(BUILD)\n");
+            fprintf(pFile, "\t@install -m 0755 %s $(BUILD)/\n\n", pMap->sName);
+        }
+        else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n\n", sCompiler, sLinker, pMap->sName);
+    }
+
+    if (nInstall)
+    {
+        fprintf(pFile, ".PHONY: install\ninstall:\n");
+        fprintf(pFile, "\t@test -d $(INSTALL) || mkdir $(INSTALL)\n");
+        fprintf(pFile, "\t@install -m 0755 %s $(INSTALL)/\n\n", pMap->sName);
+    }
 
     fprintf(pFile, ".PHONY: clean\nclean:\n");
     fprintf(pFile, "\t$(RM) %s $(OBJS)\n", pMap->sName);

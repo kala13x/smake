@@ -49,11 +49,13 @@ static char *WhiteSpace(const int nLength)
 void Usage(const char *pName)
 {
     int nLength = strlen(pName) + 6;
-    printf("Usage: %s [-s <source-path>] [-c <config-path>] [-d]\n", pName);
-    printf(" %s [-f <'flags'>] [-l <'libs'>] [-x] [-v] [-h]\n", WhiteSpace(nLength));
+    printf("Usage: %s [-s <source-path>] [-c <config-path>] [-i <install-path>] [-d]\n", pName);
+    printf(" %s [-b <build-dir>] [-f <'flags'>] [-l <'libs'>] [-x] [-v] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -s <src-path>       # Path of source files\n");
     printf("  -c <config-path>    # Config file\n");
+    printf("  -i <install-path>   # Install destination\n");
+    printf("  -b <build-path>     # Build destination\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
     printf("  -p <name>           # Program name\n");

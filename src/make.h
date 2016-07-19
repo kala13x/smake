@@ -21,6 +21,8 @@ typedef struct {
     vector *pFileList;
     vector *pObjList;
     char sCfgFile[PATH_MAX];
+    char sInstall[PATH_MAX];
+    char sBuild[PATH_MAX];
     char sFlags[LINE_MAX];
     char sLibs[LINE_MAX];
     char sPath[PATH_MAX];

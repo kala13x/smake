@@ -17,7 +17,7 @@
 static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
 {
     int nChar, nSrc = 0;
-    while ( (nChar = getopt(argc, argv, "s:c:f:l:p:d1:v:x1:h1")) != -1) 
+    while ( (nChar = getopt(argc, argv, "s:c:b:i:f:l:p:d1:v:x1:h1")) != -1) 
     {
         switch (nChar)
         {
@@ -26,6 +26,12 @@ static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
                 break;
             case 'c':
                 strcpy(pMap->sCfgFile, optarg);
+                break;
+            case 'b':
+                strcpy(pMap->sBuild, optarg);
+                break;
+            case 'i':
+                strcpy(pMap->sInstall, optarg);
                 break;
             case 'f':
                 strcpy(pMap->sFlags, optarg);
@@ -92,6 +98,7 @@ int main(int argc, char *argv[])
             nRetVal = SMake_WriteMake(&objMap);
             if (nRetVal) slog(0, SLOG_LIVE, "Succesfully generated Makefile");
         }
+        else slog(0, SLOG_ERROR, "Unable to find source files: %s", objMap.sPath);
     }
 
     SMakeMap_Destroy(&objMap);
