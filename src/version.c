@@ -58,10 +58,10 @@ void Usage(const char *pName)
     printf("  -b <build-path>     # Build destination\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
-    printf("  -p <name>           # Program name\n");
+    printf("  -p <name>           # Program name (<name>.a/<name>.so are also allowed for static/shared libraries)\n");
     printf("  -d                  # Virtual directory (VPATH)\n");
-    printf("  -v                  # Verbose\n");
-    printf("  -x                  # If sources are CPP files\n");
+    printf("  -v                  # Verbose (0 for silent and above for verbose level)\n");
+    printf("  -x                  # Flag to compile CPP source files\n");
     printf("  -h                  # Print version and usage\n\n");
     printf("Example: %s -s src -f '-Wall' -l '-lpthread'\n\n", pName);
 }
