@@ -256,18 +256,16 @@ int SMake_WriteMake(SMakeMap *pMap)
     fprintf(pFile, "\t$(%s) $(%s) -c $< $(LIBS)\n\n", sCompiler, sLinker);
     fprintf(pFile, "%s: $(OBJS)\n", pMap->sName);
 
-    if (nStatic) fprintf(pFile, "\t$(AR) rcs -o %s $(OBJS)\n\n", pMap->sName);
-    else if (nShared) fprintf(pFile, "\t$(%s) -shared -o %s $(OBJS)\n\n", sCompiler, pMap->sName);
-    else 
+    if (nStatic) fprintf(pFile, "\t$(AR) rcs -o %s $(OBJS)\n", pMap->sName);
+    else if (nShared) fprintf(pFile, "\t$(%s) -shared -o %s $(OBJS)\n", sCompiler, pMap->sName);
+    else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n", sCompiler, sLinker, pMap->sName);
+
+    if (nBuild)
     {
-        if (nBuild)
-        {
-            fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n", sCompiler, sLinker, pMap->sName);
-            fprintf(pFile, "\t@test -d $(BUILD) || mkdir $(BUILD)\n");
-            fprintf(pFile, "\t@install -m 0755 %s $(BUILD)/\n\n", pMap->sName);
-        }
-        else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n\n", sCompiler, sLinker, pMap->sName);
+        fprintf(pFile, "\t@test -d $(BUILD) || mkdir $(BUILD)\n");
+        fprintf(pFile, "\t@install -m 0755 %s $(BUILD)/\n\n", pMap->sName);
     }
+    else fprintf(pFile, "\n");
 
     if (nInstall)
     {
