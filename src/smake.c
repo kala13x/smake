@@ -1,106 +1,45 @@
 /*
  *  src/smake.c
  *
- *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
+ *  Copyleft (C) 2020  Sun Dro (a.k.a. kala13x)
  *
  * Main source file of project
  */
 
 #include "stdinc.h"
-#include "vector.h"
-#include "version.h"
-#include "config.h"
-#include "files.h"
+#include "xlog.h"
 #include "make.h"
-#include "slog.h"
-
-static int ParseArguments(int argc, char *argv[], SMakeMap *pMap)
-{
-    int nChar, nSrc = 0;
-    while ( (nChar = getopt(argc, argv, "s:c:b:i:f:l:p:d1:v:x1:h1")) != -1) 
-    {
-        switch (nChar)
-        {
-            case 's':
-                strcpy(pMap->sPath, optarg); nSrc = 1;
-                break;
-            case 'c':
-                strcpy(pMap->sCfgFile, optarg);
-                break;
-            case 'b':
-                strcpy(pMap->sBuild, optarg);
-                break;
-            case 'i':
-                strcpy(pMap->sInstall, optarg);
-                break;
-            case 'f':
-                strcpy(pMap->sFlags, optarg);
-                break;
-            case 'l':
-                strcpy(pMap->sLibs, optarg);
-                break;
-            case 'p':
-                strcpy(pMap->sName, optarg);
-                break;
-            case 'v':
-                pMap->nVerbose = atoi(optarg);
-                break;
-            case 'd':
-                pMap->nVPath = 1;
-                break;
-            case 'x':
-                pMap->nCPP = 1;
-                break;
-            case 'h':
-            default:
-                Greet("Simple-Make");
-                Usage(argv[0]);
-                return -1;
-        }
-    }
-
-    if (pMap->nVPath && !nSrc)
-    {
-        Greet("Simple-Make");
-        slog(0, SLOG_ERROR, "VPATH (-d) works with argument -s only\n");
-        Usage(argv[0]);
-        return -1;
-    }
-
-    return 0;
-}
+#include "sver.h"
+#include "cfg.h"
 
 int main(int argc, char *argv[])
 {
-    slog_init("smake", NULL, 2, 2, 0);
+    SMake_Greet("Simple-Make");
+    XLogger_Init("example", "NULL", 0, 0);
 
-    SMakeMap objMap;
-    SMakeMap_Init(&objMap);
-    if (ParseArguments(argc, argv, &objMap)) return 0;
-
-    int nSilent = objMap.nVerbose < 1 ? 1 : 0;
-    if (!nSilent) Greet("Simple-Make");
-    slog_silent(nSilent);
-
-    int nRetVal = Files_GetList(&objMap);
-    if (nRetVal) 
+    SMakeContext smakeCtx;
+    SMake_InitContext(&smakeCtx);
+    if (SMake_ParseArgs(&smakeCtx, argc, argv))
     {
-        slog(0, SLOG_LIVE, "File list initialization done");
-        nRetVal = SMakeMap_FillObjects(&objMap);
-        if (nRetVal)
-        {
-            nRetVal = ConfigFile_Load(objMap.sCfgFile, &objMap);
-            if (nRetVal) slog(0, SLOG_LIVE, "Config file initialization done");
-
-            if (strlen(objMap.sName) < 1) SMake_FindMain(&objMap);
-            slog(0, SLOG_LIVE, "Ready to write Makefile");
-
-            nRetVal = SMake_WriteMake(&objMap);
-            if (nRetVal) slog(0, SLOG_LIVE, "Succesfully generated Makefile");
-        }
-        else slog(0, SLOG_ERROR, "Unable to find source files: %s", objMap.sPath);
+        SMake_ClearContext(&smakeCtx);
+        return 0;
     }
 
-    SMakeMap_Destroy(&objMap);
+    XLoggerConfig logCfg;
+    XLogger_ConfigGet(&logCfg);
+    logCfg.nLogLevel = smakeCtx.nVerbose;
+    XLogger_ConfigSet(&logCfg);
+
+    SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
+    if (SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
+    {
+        if (SMake_ParseProject(&smakeCtx))
+        {
+            if (SMake_WriteMake(&smakeCtx)) 
+                XLog_Live(0, "Successfuly generated Makefile");
+        }
+    }
+
+    SMake_ClearContext(&smakeCtx);
     return 0;
 }

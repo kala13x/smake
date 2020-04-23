@@ -1,7 +1,7 @@
 /*
  *  src/make.h
  * 
- *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
+ *  Copyleft (C) 202-  Sun Dro (a.k.a. kala13x)
  *
  * Main works to prepare makefile.
  */
@@ -10,36 +10,57 @@
 #define __SMAKE_MAKE_H__
 
 #include "stdinc.h"
-#include "vector.h"
+#include "array.h"
 
-/* For include header in CPP code */
+#define SMAKE_CFG_FILE "smake.cfg"
+#define SMAKE_PATH_MAX 4096
+#define SMAKE_LINE_MAX 2048
+#define SMAKE_NAME_MAX 128
+#define SMAKE_EXT_MAX  6
+
+#define SMAKE_FILE_UNF  0
+#define SMAKE_FILE_OBJ  1
+#define SMAKE_FILE_CPP  2
+#define SMAKE_FILE_HPP  3
+#define SMAKE_FILE_C    4
+#define SMAKE_FILE_H    5
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-    vector *pFileList;
-    vector *pObjList;
-    char sCfgFile[PATH_MAX];
-    char sInstall[PATH_MAX];
-    char sBuild[PATH_MAX];
-    char sFlags[LINE_MAX];
-    char sLibs[LINE_MAX];
-    char sPath[PATH_MAX];
-    char sName[128];
+    char sPath[SMAKE_PATH_MAX];
+    char sName[SMAKE_NAME_MAX];
+    int nType;
+} SMakeFile;
+
+typedef struct {
+    char sInstall[SMAKE_PATH_MAX];
+    char sOutDir[SMAKE_PATH_MAX];
+    char sExcept[SMAKE_LINE_MAX];
+    char sConfig[SMAKE_PATH_MAX];
+    char sBuild[SMAKE_PATH_MAX];
+    char sFlags[SMAKE_LINE_MAX];
+    char sVPath[SMAKE_PATH_MAX];
+    char sLibs[SMAKE_LINE_MAX];
+    char sPath[SMAKE_PATH_MAX];
+    char sName[SMAKE_NAME_MAX];
+    char sMain[SMAKE_NAME_MAX];
+    XArray fileArr;
+    XArray objArr;
     int nVerbose;
-    int nVPath;
-    int nCPP;
-} SMakeMap;
+    int nVPath:1;
+    int nCPP:1;
+} SMakeContext;
 
-void SMakeMap_Init(SMakeMap *pMap);
-void SMakeMap_Destroy(SMakeMap *pMap);
+void SMake_InitContext(SMakeContext *pCtx);
+void SMake_ClearContext(SMakeContext *pCtx);
 
-int SMakeMap_FillObjects(SMakeMap *pMap);
-int SMake_FindMain(SMakeMap *pMap);
-int SMake_WriteMake(SMakeMap *pMap);
+int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath);
+int SMake_ParseProject(SMakeContext *pCtx);
+int SMake_WriteMake(SMakeContext *pCtx);
 
-/* For include header in CPP code */
 #ifdef __cplusplus
 }
 #endif

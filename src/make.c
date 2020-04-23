@@ -1,5 +1,5 @@
 /*
- *  src/make.h
+ *  src/make.c
  * 
  *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
  *
@@ -7,276 +7,331 @@
  */
 
 #include "stdinc.h"
-#include "vector.h"
-#include "files.h"
+#include "file.h"
+#include "xstr.h"
+#include "xlog.h"
 #include "make.h"
-#include "slog.h"
 
-static char *SkipToStr(char *pString, const char *pStr)
+void SMake_ClearCallback(void *pData)
 {
-    char sMain[256];
-    int i ,x, nFound = 1;
-
-    memset(sMain, 0, sizeof(sMain));
-    strcpy(sMain, pStr);
-
-    int nLength = strlen(pString);
-    int nMain = strlen(sMain);
-
-    for (i = 0; i < nLength; i++)
+    XArrayData *pArrData = (XArrayData*)pData;
+    if (pArrData != NULL)
     {
-        if (pString[i] == sMain[0])
+        if (pArrData->pData)
         {
-            for(x = 1; x < nMain; x++)
-                if (pString[i+x] != sMain[x]) nFound = 0;
- 
-            if (nFound)
-            {
-                pString += i+x;
-                return pString;
-            }
+            free(pArrData->pData);
+            pArrData->pData = NULL;
+            pArrData->nSize = 0;
         }
-    }
 
-    return pString;
+        free(pArrData);
+        pArrData = NULL;
+    }
 }
 
-void SMakeMap_Init(SMakeMap *pMap) 
+SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
 {
-    pMap->pFileList = vector_new(3);
-    pMap->pObjList = vector_new(3);
-
-    if(!pMap->pFileList || !pMap->pObjList)
+    SMakeFile *pFile = malloc(sizeof(SMakeFile));
+    if (pFile == NULL)
     {
-        slog(0, SLOG_PANIC, "Can not allocate object vector memory");
+        XLog_Error(0, "Can not allocate memory for file");
+        return NULL;
+    }
+
+    memcpy(pFile->sPath, pPath, sizeof(pFile->sPath));
+    memcpy(pFile->sName, pName, sizeof(pFile->sName));
+    pFile->nType = nType;
+    return pFile;
+}
+
+void SMake_InitContext(SMakeContext *pCtx) 
+{
+    if(XArray_Init(&pCtx->fileArr, 3, 0) == NULL)
+    {
+        XLog_Error(0, "Can not initialize file array");
         exit(EXIT_FAILURE);
     }
 
-    memset(pMap->sName, 0, sizeof(pMap->sName));
-    memset(pMap->sInstall, 0, PATH_MAX);
-    memset(pMap->sCfgFile, 0, PATH_MAX);
-    memset(pMap->sBuild, 0, PATH_MAX);
-    memset(pMap->sFlags, 0, LINE_MAX);
-    memset(pMap->sLibs, 0, LINE_MAX);
-    memset(pMap->sPath, 0, PATH_MAX);
-    strcpy(pMap->sCfgFile, "smake.cfg");
-    getcwd(pMap->sPath, PATH_MAX);
-    pMap->nVerbose = 1;
-    pMap->nVPath = 0;
-    pMap->nCPP = 0;
+    if(XArray_Init(&pCtx->objArr, 3, 0) == NULL)
+    {
+        XLog_Error(0, "Can not initialize object array");
+        XArray_Destroy(&pCtx->fileArr);
+        exit(EXIT_FAILURE);
+    }
+
+    pCtx->fileArr.clearCb = SMake_ClearCallback;
+    pCtx->objArr.clearCb = SMake_ClearCallback;
+
+    memset(pCtx->sInstall, 0, sizeof(pCtx->sInstall));
+    memset(pCtx->sConfig, 0, sizeof(pCtx->sConfig));
+    memset(pCtx->sBuild, 0, sizeof(pCtx->sBuild));
+    memset(pCtx->sFlags, 0, sizeof(pCtx->sFlags));
+    memset(pCtx->sVPath, 0, sizeof(pCtx->sVPath));
+    memset(pCtx->sName, 0, sizeof(pCtx->sName));
+    memset(pCtx->sMain, 0, sizeof(pCtx->sMain));
+    memset(pCtx->sLibs, 0, sizeof(pCtx->sLibs));
+    pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
+    pCtx->sPath[1] = pCtx->sOutDir[1] = 0;
+    pCtx->nVerbose = 0;
+    pCtx->nVPath = 0;
+    pCtx->nCPP = 0;
 }
 
-void SMakeMap_Destroy(SMakeMap *pMap)
+void SMake_ClearContext(SMakeContext *pCtx)
 {
-    int i, nSize = vector_size(pMap->pFileList);
-    for (i = 0; i < nSize; i++) 
-    {
-        char *pFile = (char*)vector_get(pMap->pFileList, i);
-        free(pFile);
-    }
-
-    nSize = vector_size(pMap->pObjList);
-    for (i = 0; i < nSize; i++) 
-    {
-        char *pObj = (char*)vector_get(pMap->pObjList, i);
-        free(pObj);
-    }
-
-    vector_free(pMap->pFileList);
-    vector_free(pMap->pObjList);
+    XArray_Destroy(&pCtx->fileArr);
+    XArray_Destroy(&pCtx->objArr);
 }
 
-int SMakeMap_FillObjects(SMakeMap *pMap)
+int SMake_GetFileType(const char *pPath, int nLen)
 {
-    char sExt[6];
-    int nFilesPushed = 0;
-    int i, nFiles = vector_size(pMap->pFileList);
-
-    memset(sExt, 0, sizeof(sExt));
-    sprintf(sExt, ".%s", pMap->nCPP ? "cpp" : "c");
-
-    for(i = 0; i < nFiles; i++)
-    {
-        char *pFile = (char*)vector_get(pMap->pFileList, i);
-        if (strstr(pFile, sExt) != NULL)
-        {
-            char sFile[PATH_MAX];
-            memset(sFile, 0, PATH_MAX);
-            strcpy(sFile, pFile);
-
-            char *pExt = SkipToStr(sFile, sExt);
-            if (*pExt == '\0') 
-            {
-                char *pObj = strtok(sFile, ".");
-                char *pObjName = (char*)malloc(strlen(pObj));
-                sprintf(pObjName, "%s.o", pObj);
-
-                vector_push(pMap->pObjList, (void*)pObjName);
-                if (pMap->nVerbose > 1) slog(0, SLOG_DEBUG, "Loaded object: %s", pObjName);
-                nFilesPushed++;
-            }
-        }
-    }
-
-    if (!nFilesPushed)
-    {
-        if (!pMap->nCPP)
-        {
-            pMap->nCPP = 1;
-            return SMakeMap_FillObjects(pMap);
-        }
-
-        return 0;
-    }
-
-    slog(0, SLOG_LIVE, "Object list initialization done");
-    return 1;
+    if (!strncmp(&pPath[nLen-4], ".cpp", 4)) return SMAKE_FILE_CPP;
+    if (!strncmp(&pPath[nLen-4], ".hpp", 4)) return SMAKE_FILE_HPP;
+    if (!strncmp(&pPath[nLen-2], ".c", 2)) return SMAKE_FILE_C;
+    if (!strncmp(&pPath[nLen-2], ".h", 2)) return SMAKE_FILE_H;
+    return SMAKE_FILE_UNF;
 }
 
-int SMake_FindMain(SMakeMap *pMap)
+int SMake_IsExcluded(SMakeContext *pCtx, const char *pPath)
 {
-    int i, nFiles = vector_size(pMap->pFileList);
-    for (i = 0; i < nFiles; i++)
+    char sExcluded[SMAKE_LINE_MAX];
+    strncpy(sExcluded, pCtx->sExcept, sizeof(sExcluded));
+
+    char *pExclude = strtok(sExcluded, ":");
+    while(pExclude != NULL)
     {
-        char *pFile = (char*)vector_get(pMap->pFileList, i);
-        char sFile[PATH_MAX];
-        memset(sFile, 0, PATH_MAX);
-        sprintf(sFile, "%s/%s", pMap->sPath, pFile);
-        int j, nLines = Files_GetLineNumber(sFile);
-
-        for (j = 1; j <= nLines; j++)
-        {
-            char *pLine = Files_GetLine(sFile, j);
-            if (pLine) 
-            {
-                if (strstr(pLine, " main") != NULL)
-                {
-                    pLine = SkipToStr(pLine, " main");
-                    while(*pLine == ' ') pLine++;
-
-                    if (*pLine == '(')
-                    {
-                        char sName[128];
-                        memset(sName, 0, sizeof(sName));
-                        strcpy(sName, pFile);
-
-                        char *pName = strtok(sName, ".");
-                        strcpy(pMap->sName, pName);
-
-                        if (pMap->nVerbose > 1)
-                            slog(0, SLOG_DEBUG, "Detected main file: %s", sFile);
-
-                        return 1;
-                    }
-                }
-            }
-        }
+        if (!strcmp(pExclude, pPath)) return 1;
+        pExclude = strtok(NULL, ":");
     }
 
-    slog(0, SLOG_WARN, "Can not find main file");
     return 0;
 }
 
-int SMake_WriteMake(SMakeMap *pMap)
+int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
 {
-    char sMakefile[PATH_MAX];
-    memset(sMakefile, 0, PATH_MAX);
-
-    if (pMap->nVPath) sprintf(sMakefile, "Makefile");
-    else sprintf(sMakefile, "%s/Makefile", pMap->sPath);
-
-    char sCompiler[16], sLinker[16];
-    memset(sCompiler, 0, sizeof(sCompiler));
-    memset(sLinker, 0, sizeof(sLinker));
-
-    if (pMap->nCPP)
+    if (SMake_IsExcluded(pCtx, pPath))
     {
-        strcpy(sCompiler, "CXX");
-        strcpy(sLinker, "CXXFLAGS");
-    }
-    else 
-    {
-        strcpy(sCompiler, "CC");
-        strcpy(sLinker, "CFLAGS");
-    }
-
-    FILE *pFile = fopen(sMakefile, "w");
-    if (!pFile)
-    {
-        slog(0, SLOG_ERROR, "Can not open destination file: %s", sMakefile);
+        XLog_Info(1, "Path is excluded: %s", pPath);
         return 0;
     }
 
-    fprintf(pFile, "%s = %s\n", sLinker, pMap->sFlags);
-    fprintf(pFile, "LIBS = %s\n\n", pMap->sLibs);
-    fprintf(pFile, "OBJS = ");
-
-    char sObjects[PATH_MAX];
-    memset(sObjects, 0, PATH_MAX);
-    int i, nObjs = vector_size(pMap->pObjList);
-
-    for (i = 0; i < nObjs; i++)
+    XDir dir;
+    if (!(XDir_Open(&dir, pPath)))
     {
-        char *pSingleObj = (char*)vector_get(pMap->pObjList, i);
-        if (nObjs > 1)
-        {
-            if (i > 0)
-            {
-                if (i == (nObjs - 1)) fprintf(pFile, "\t%s\n\n", pSingleObj);
-                else fprintf(pFile, "\t%s \\\n", pSingleObj);
-            }
-            else fprintf(pFile, "%s \\\n", pSingleObj);
-        }
-        else fprintf(pFile, "%s\n", pSingleObj);
+        XLog_Error(0, "Can not open directory: %s", pPath);
+        return 0;
     }
+
+    char sFile[SMAKE_NAME_MAX];
+    while(XDir_Read(&dir, sFile, sizeof(sFile)) > 0)
+    {
+        char sFullPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
+        int nBytes = snprintf(sFullPath, sizeof(sFullPath), "%s/%s", pPath, sFile);
+
+        if (SMake_IsExcluded(pCtx, sFullPath))
+        {
+            XLog_Info(1, "Path is excluded: %s", sFullPath);
+            memset(sFile, 0, sizeof(sFile));
+            continue;
+        }
+
+        int nType = SMake_GetFileType(sFullPath, nBytes);
+        int nDir = (int)dir.pEntry->d_type == 4 ? 1 : 0;
+
+        if (!nDir && nType != SMAKE_FILE_UNF)
+        {
+            SMakeFile *pFile = SMake_FileNew(pPath, sFile, nType);
+            if (pFile == NULL) return 0;
+
+            XLog_Live(3, "Found file: %s", sFullPath);
+            XArray_AddData(&pCtx->fileArr, pFile, 0);
+        }
+
+        if (nDir) SMake_LoadFiles(pCtx, sFullPath);
+        memset(sFile, 0, sizeof(sFile));
+    }
+
+    XDir_Close(&dir);
+    return XArray_GetUsedSize(&pCtx->fileArr);
+}
+
+int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
+{
+    XFile srcFile;
+	char sLine[SMAKE_LINE_MAX];
+
+    XFile_Open(&srcFile, pPath, "r");
+    if (srcFile.nFD < 0)
+    {
+        XLog_Error(0, "Can not open source file: %s", pPath);
+        return 0;
+    }
+
+    int nRet = XFile_GetLine(&srcFile, sLine, sizeof(sLine));
+    while (nRet == XFILE_SUCCESS)
+    {
+        char *pLine = strstr(sLine, " main");
+        if (pLine != NULL) 
+        {
+            pLine += 5;
+            while(*pLine == ' ') pLine++;
+            if (*pLine == '(') 
+            {
+                int nRetVal = 1;
+                XLog_Info(0, "Found main function in file: %s", pPath);
+
+                if (strlen(pCtx->sMain))
+                {
+                    XLog_Error(0, "Main function already exits: %s", pCtx->sMain);
+                    XLog_Info(0, "You can exclude file or directory with argument: -e");
+                    nRetVal = 0;
+                }
+
+                XFile_Close(&srcFile);
+                return nRetVal;
+            }
+        }
+
+        nRet = XFile_GetLine(&srcFile, sLine, sizeof(sLine));
+    }
+
+    XFile_Close(&srcFile);
+    return 0;
+}
+
+int SMake_ParseProject(SMakeContext *pCtx)
+{
+    int i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
+    for (i = 0; i < nFiles; i++)
+    {
+        SMakeFile *pFile = (SMakeFile*)XArray_GetData(&pCtx->fileArr, i);
+        if (pFile != NULL)
+        {
+            char sName[SMAKE_NAME_MAX];
+            strncpy(sName, pFile->sName, sizeof(sName));
+
+            int nLength = strlen(sName);
+            int nLastBytes = 0;
+
+            if (pFile->nType == SMAKE_FILE_CPP) nLastBytes = 4;
+            else if (pFile->nType == SMAKE_FILE_C) nLastBytes = 2;
+            else if (pFile->nType == SMAKE_FILE_H || 
+                     pFile->nType == SMAKE_FILE_HPP)
+            {
+                if (strstr(pCtx->sFlags, pFile->sPath) == NULL)
+                {
+                    strcat(pCtx->sFlags, " -I");
+                    strcat(pCtx->sFlags, pFile->sPath);
+                }
+            }
+
+            if (!nLastBytes) continue;
+            memset(&sName[nLength-nLastBytes], 0, nLastBytes);
+
+            char sPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
+            snprintf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
+
+            if (SMake_FindMain(pCtx, sPath)) strncpy(pCtx->sMain, sName, sizeof(pCtx->sMain));
+            strncat(sName, ".o", 3);
+
+            SMakeFile *pObj = SMake_FileNew(pFile->sPath, sName, SMAKE_FILE_OBJ);
+            if (pFile != NULL)
+            {
+                if (strstr(pCtx->sPath, pObj->sPath) == NULL &&
+                    strstr(pCtx->sVPath, pObj->sPath) == NULL)
+                {
+                    strcat(pCtx->sVPath, pObj->sPath);
+                    strcat(pCtx->sVPath, ":");
+                }
+
+                XLog_Live(3, "Loaded object: %s/%s", pObj->sPath, sName);
+                XArray_AddData(&pCtx->objArr, pObj, 0);
+            }
+        }
+    }
+
+    return XArray_GetUsedSize(&pCtx->objArr);
+}
+
+int SMake_WriteMake(SMakeContext *pCtx)
+{
+    char sMakefile[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
+    if (pCtx->nVPath) snprintf(sMakefile, sizeof(sMakefile), "Makefile");
+    else snprintf(sMakefile, sizeof(sMakefile), "%s/Makefile", pCtx->sPath);
+
+    FILE *pFile = fopen(sMakefile, "w");
+    if (pFile == NULL)
+    {
+        XLog_Error(0, "Can not open destination file");
+        return 0;
+    }
+
+    char *pCompiler = pCtx->nCPP ? "CXX" : "CC";
+    char *pLinker = pCtx->nCPP ? "CXXFLAGS" : "CFLAGS";
 
     int nStatic, nShared;
     nStatic = nShared = 0;
-    if (strstr(pMap->sName, ".a") != NULL) nStatic = 1;
-    if (strstr(pMap->sName, ".so") != NULL) nShared = 1;
 
-    if (nStatic && nShared)
+    if (!strlen(pCtx->sName)) strncpy(pCtx->sName, pCtx->sMain, sizeof(pCtx->sName));
+    if (strstr(pCtx->sName, ".a") != NULL) nStatic = 1;
+    if (strstr(pCtx->sName, ".so") != NULL) nShared = 1;
+
+    fprintf(pFile, "%s = %s\n", pLinker, pCtx->sFlags);
+    fprintf(pFile, "LIBS = %s\n", pCtx->sLibs);
+    fprintf(pFile, "NAME = %s\n", pCtx->sName);
+    fprintf(pFile, "ODIR = %s\n\n", pCtx->sOutDir);
+    fprintf(pFile, "OBJS = ");
+
+    int i, nObjs = XArray_GetUsedSize(&pCtx->objArr);
+    for (i = 0; i < nObjs; i++)
     {
-        slog(0, SLOG_ERROR, "Invalid filename: %s", pMap->sName);
-        slog(0, SLOG_INFO, "Only one extension is allowed");
-        fclose(pFile);
-        remove(sMakefile);
-        return 0;
+        SMakeFile *pObj = (SMakeFile*)XArray_GetData(&pCtx->objArr, i);
+        if (pObj == NULL) continue;
+
+        if (nObjs < 2) { fprintf(pFile, "%s\n", pObj->sName); break; }
+        if (!i) { fprintf(pFile, "%s \\\n", pObj->sName); continue; }
+        if (i == (nObjs - 1)) fprintf(pFile, "\t%s\n\n", pObj->sName);
+        else fprintf(pFile, "\t%s \\\n", pObj->sName);
     }
 
-    int nBuild = strlen(pMap->sBuild) > 2 ? 1 : 0;
-    int nInstall = strlen(pMap->sInstall) > 2 ? 1 : 0;
+    int nBuild = strlen(pCtx->sBuild) ? 1 : 0;
+    int nInstall = strlen(pCtx->sInstall) ? 1 : 0;
+    int nVPathLen = strlen(pCtx->sVPath);
 
-    if (nBuild) fprintf(pFile, "BUILD = %s\n", pMap->sBuild);
-    if (nInstall) fprintf(pFile, "INSTALL = %s\n", pMap->sInstall);
-    if (pMap->nVPath) fprintf(pFile, "VPATH = %s\n", pMap->sPath);
-    fprintf(pFile, "\n");
+    fprintf(pFile, "OBJECTS = $(patsubst %%,$(ODIR)/%%,$(OBJS))\n");
+    if (nBuild) fprintf(pFile, "BUILD = %s\n", pCtx->sBuild);
+    if (nInstall) fprintf(pFile, "INSTALL = %s\n", pCtx->sInstall);
 
-    fprintf(pFile, ".%s.o:\n", pMap->nCPP ? "cpp" : "c");
-    fprintf(pFile, "\t$(%s) $(%s) -c $< $(LIBS)\n\n", sCompiler, sLinker);
-    fprintf(pFile, "%s: $(OBJS)\n", pMap->sName);
+    if (pCtx->sVPath[nVPathLen-1] == ':') pCtx->sVPath[nVPathLen-1] = '\0';
+    if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, pCtx->sVPath);
+    else if (strlen(pCtx->sVPath)) fprintf(pFile, "VPATH = %s\n", pCtx->sVPath);
 
-    if (nStatic) fprintf(pFile, "\t$(AR) rcs -o %s $(OBJS)\n", pMap->sName);
-    else if (nShared) fprintf(pFile, "\t$(%s) -shared -o %s $(OBJS)\n", sCompiler, pMap->sName);
-    else fprintf(pFile, "\t$(%s) $(%s) -o %s $(OBJS) $(LIBS)\n", sCompiler, sLinker, pMap->sName);
+    fprintf(pFile, "\n.%s.o:\n", pCtx->nCPP ? "cpp" : "c");
+    fprintf(pFile, "\t@test -d $(ODIR) || mkdir $(ODIR)\n");
+    fprintf(pFile, "\t$(%s) $(%s)%s-c -o $(ODIR)/$@ $< $(LIBS)\n\n", 
+        pCompiler, pLinker, nShared ? " -fPIC " : " ");
+    fprintf(pFile, "$(NAME):$(OBJS)\n");
+
+    if (nStatic) fprintf(pFile, "\t$(AR) rcs -o $(ODIR)/$(NAME) $(OBJECTS)\n");
+    else if (nShared) fprintf(pFile, "\t$(%s) -shared -o $(ODIR)/$(NAME) $(OBJECTS)\n", pCompiler);
+    else fprintf(pFile, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pLinker);
 
     if (nBuild)
     {
         fprintf(pFile, "\t@test -d $(BUILD) || mkdir $(BUILD)\n");
-        fprintf(pFile, "\t@install -m 0755 %s $(BUILD)/\n\n", pMap->sName);
+        fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(BUILD)/\n");
     }
-    else fprintf(pFile, "\n");
 
     if (nInstall)
     {
-        fprintf(pFile, ".PHONY: install\ninstall:\n");
+        fprintf(pFile, "\n.PHONY: install\ninstall:\n");
         fprintf(pFile, "\t@test -d $(INSTALL) || mkdir $(INSTALL)\n");
-        fprintf(pFile, "\t@install -m 0755 %s $(INSTALL)/\n\n", pMap->sName);
+        fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL)/\n");
     }
 
-    fprintf(pFile, ".PHONY: clean\nclean:\n");
-    fprintf(pFile, "\t$(RM) %s $(OBJS)\n", pMap->sName);
-    fclose(pFile);
+    fprintf(pFile, "\n.PHONY: clean\nclean:\n");
+    fprintf(pFile, "\t$(RM) $(ODIR)/$(NAME) $(OBJECTS)\n");
 
+    fclose(pFile);
     return 1;
 }

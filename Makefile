@@ -1,33 +1,33 @@
-CFLAGS = -g -O2 -Wall -pthread
-LIB = -lpthread 
-
-RM = rm -rf
-VPATH = src
-BUILD = bin
-INSTALL = /usr/bin
+CFLAGS =  -I./src
+LIBS = -lpthread
+NAME = smake
+ODIR = obj
 
 OBJS = smake.o \
-		version.o \
-		vector.o \
-		config.o \
-		files.o \
-		make.o \
-		slog.o 
+	xlog.o \
+	sver.o \
+	file.o \
+	array.o \
+	xstr.o \
+	cfg.o \
+	make.o
 
-.c.o: $(VPATH)
-	$(CC) $(CFLAGS) -c $< $(LIB)
+OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
+INSTALL = /usr/bin
+VPATH = ./src
 
-smake: $(OBJS)
-	$(CC) $(CFLAGS) -o smake $(OBJS) $(LIB)
-	@test -d $(BUILD) || mkdir $(BUILD)
-	@install -m 0755 smake $(BUILD)/
+.c.o:
+	@test -d $(ODIR) || mkdir $(ODIR)
+	$(CC) $(CFLAGS) -c -o $(ODIR)/$@ $< $(LIBS)
+
+$(NAME):$(OBJS)
+	$(CC) $(CFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)
 
 .PHONY: install
-install: smake
+install:
 	@test -d $(INSTALL) || mkdir $(INSTALL)
-	@echo @install -m 0755 smake $(INSTALL)/
-	@install -m 0755 smake $(INSTALL)/
+	@install -m 0755 $(ODIR)/$(NAME) $(INSTALL)/
 
 .PHONY: clean
 clean:
-	$(RM) smake $(OBJS)
+	$(RM) $(ODIR)/$(NAME) $(OBJECTS)
