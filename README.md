@@ -1,4 +1,4 @@
-## Simple-Make - Version 1.0 build 18
+## Simple-Make - Version 1.0 build 20
 SMake is small and simple tool which helps developers to automatically generate Makefiles for C/C++ projects. Software is written for educational purposes and is distributed in the hope that it will be useful for anyone interested in this field.
 
 ### Installation
