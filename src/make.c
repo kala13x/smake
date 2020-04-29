@@ -232,7 +232,7 @@ int SMake_ParseProject(SMakeContext *pCtx)
             snprintf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
 
             if (SMake_FindMain(pCtx, sPath)) strncpy(pCtx->sMain, sName, sizeof(pCtx->sMain));
-            strncat(sName, ".o", 3);
+            strncat(sName, ".$(OBJ)", 8);
 
             SMakeFile *pObj = SMake_FileNew(pFile->sPath, sName, SMAKE_FILE_OBJ);
             if (pFile != NULL)
@@ -279,7 +279,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
     fprintf(pFile, "%s = %s\n", pLinker, pCtx->sFlags);
     fprintf(pFile, "LIBS = %s\n", pCtx->sLibs);
     fprintf(pFile, "NAME = %s\n", pCtx->sName);
-    fprintf(pFile, "ODIR = %s\n\n", pCtx->sOutDir);
+    fprintf(pFile, "ODIR = %s\n", pCtx->sOutDir);
+    fprintf(pFile, "OBJ = o\n\n");
     fprintf(pFile, "OBJS = ");
 
     int i, nObjs = XArray_GetUsedSize(&pCtx->objArr);
@@ -306,7 +307,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, pCtx->sVPath);
     else if (strlen(pCtx->sVPath)) fprintf(pFile, "VPATH = %s\n", pCtx->sVPath);
 
-    fprintf(pFile, "\n.%s.o:\n", pCtx->nCPP ? "cpp" : "c");
+    fprintf(pFile, "\n.%s.$(OBJ):\n", pCtx->nCPP ? "cpp" : "c");
     fprintf(pFile, "\t@test -d $(ODIR) || mkdir $(ODIR)\n");
     fprintf(pFile, "\t$(%s) $(%s)%s-c -o $(ODIR)/$@ $< $(LIBS)\n\n", 
         pCompiler, pLinker, nShared ? " -fPIC " : " ");

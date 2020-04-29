@@ -7,6 +7,7 @@
  */
 
 #include "stdinc.h"
+#include "xstr.h"
 #include "xlog.h"
 
 /* Max size of string */
@@ -312,9 +313,8 @@ void XLogger_ConfigSet(XLoggerConfig *pCfg)
 void XLogger_Init(const char* pName, const char* pConf, int nLogLevel, int nTdSafe)
 {
     /* Set up default values */
+    xstrncpy(g_xlogCfg.sFileName, pName, sizeof(g_xlogCfg.sFileName));
     memset(g_xlogCfg.sFilePath, 0, sizeof(g_xlogCfg.sFilePath));
-    memset(g_xlogCfg.sFileName, 0, sizeof(g_xlogCfg.sFileName));
-    strcpy(g_xlogCfg.sFileName, pName);
 
     g_xlogCfg.nLogLevel = nLogLevel;
     g_xlogCfg.nFileStamp = 1;
