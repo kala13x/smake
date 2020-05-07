@@ -15,7 +15,7 @@
 int main(int argc, char *argv[])
 {
     SMake_Greet("Simple-Make");
-    XLogger_Init("example", "NULL", 0, 0);
+    XLogger_Init("smake", "NULL", 0, 0);
 
     SMakeContext smakeCtx;
     SMake_InitContext(&smakeCtx);
