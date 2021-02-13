@@ -36,22 +36,22 @@ typedef struct {
 } SMakeFile;
 
 typedef struct {
-    char sInstall[SMAKE_PATH_MAX];
+    char sIncludes[SMAKE_PATH_MAX];
     char sOutDir[SMAKE_PATH_MAX];
     char sExcept[SMAKE_LINE_MAX];
     char sConfig[SMAKE_PATH_MAX];
-    char sBuild[SMAKE_PATH_MAX];
+    char sBinary[SMAKE_PATH_MAX];
     char sFlags[SMAKE_LINE_MAX];
     char sVPath[SMAKE_PATH_MAX];
     char sLibs[SMAKE_LINE_MAX];
     char sPath[SMAKE_PATH_MAX];
     char sName[SMAKE_NAME_MAX];
     char sMain[SMAKE_NAME_MAX];
+    uint8_t nVerbose;
+    uint8_t nVPath:1;
+    uint8_t nCPP:1;
     XArray fileArr;
     XArray objArr;
-    int nVerbose;
-    int nVPath:1;
-    int nCPP:1;
 } SMakeContext;
 
 void SMake_InitContext(SMakeContext *pCtx);

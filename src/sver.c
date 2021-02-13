@@ -29,9 +29,9 @@ const char* SMake_VersionShort()
 
 void SMake_Greet(const char *pName)
 {
-    printf("=================================================\n");
+    printf("================================================\n");
     printf("%s Version: %s\n", pName, SMake_Version());
-    printf("=================================================\n");
+    printf("================================================\n");
 }
 
 static char *WhiteSpace(const int nLength)
@@ -50,17 +50,17 @@ void SMake_Usage(const char *pName)
 {
     int nLength = strlen(pName) + 6;
     printf("Usage: %s [-f <'flags'>] [-l <'libs'>] [-b <path>] [-c <path>] [-e <paths>]\n", pName);
-    printf(" %s [-i <path>] [-o <path>] [-s <path>] [-p <name>] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));
+    printf(" %s [-i <path>] [-o <path>] [-p <name>] [-s <path>] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
-    printf("  -e <paths>          # Exclude files or directories\n");
-    printf("  -b <path>           # Build destination\n");
+    printf("  -b <path>           # Install destination for binary\n");
     printf("  -c <path>           # Path to config file\n");
-    printf("  -i <path>           # Install destination\n");
+    printf("  -e <paths>          # Exclude files or directories\n");
+    printf("  -i <path>           # Install destination for includes\n");
     printf("  -o <path>           # Object output destination\n");
+    printf("  -p <name>           # Program or library name\n");
     printf("  -s <path>           # Path to source files\n");
-    printf("  -p <name>           # Program name\n");
     printf("  -d                  # Virtual directory\n");
     printf("  -v                  # Verbosity level\n");
     printf("  -x                  # Use CPP compiler\n");

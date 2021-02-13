@@ -1,12 +1,12 @@
 /*
- *  xutils/file.h
- * 
- *  Copyleft (C) 2015  Sun Dro (a.k.a. kala13x)
+ *  libxutils/src/file.h
  *
- * This source includes implementations of POSIX 
- * standart file and directory operations.
+ *  This source is part of "libxutils" project
+ *  2015-2020  Sun Dro (f4tb0y@protonmail.com)
+ * 
+ * Implementation of POSIX standart 
+ * file and directory functionality.
  */
-
 
 #ifndef __XUTILS_XFILE_H__
 #define __XUTILS_XFILE_H__
@@ -15,18 +15,20 @@
 extern "C" {
 #endif
 
+#include "stdinc.h"
+
 #define XFILE_INVALID -1
 #define XFILE_UNSETRC 0
 #define XFILE_SUCCESS 1
 
-typedef struct {
+typedef struct XFile_ {
     uint64_t nPosit;
     mode_t mPerms;
     int nFlags;
     int nFD;
 } XFile;
 
-typedef struct {
+typedef struct XDir_ {
     struct dirent *pEntry;
     unsigned short nOpen;
     const char *pPath;
@@ -43,7 +45,7 @@ int XFile_Write(XFile *pFile, void *pBuff, size_t nSize);
 int XFile_Read(XFile *pFile, void *pBuff, size_t nSize);
 
 size_t XFile_GetSize(XFile *pFile);
-char* XFile_ReadBuffer(XFile *pFile);
+uint8_t* XFile_ReadBuffer(XFile *pFile);
 int XFile_Copy(XFile *pIn, XFile *pOut);
 int XFile_GetLine(XFile *pFile, char* pLine, size_t nSize);
 int XFile_GetLines(XFile *pFile);
@@ -52,6 +54,7 @@ int XFile_ReadLine(XFile *pFile, char* pLine, size_t nSize, int nLineNumber);
 int XPath_Exists(const char *pPath);
 int XPath_SetPerm(const char *pPath, char mode[]);
 int XPath_CopyFile(const char *pSrc, const char *pDst);
+int XPath_ReadFile(const char *pPath, uint8_t *pBuffer, size_t nSize);
 
 void XDir_Close(XDir *pDir);
 int XDir_Open(XDir *pDir, const char *pPath);

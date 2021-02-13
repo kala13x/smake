@@ -7,7 +7,7 @@
  */
 
 #include "stdinc.h"
-#include "xlog.h"
+#include "slog.h"
 #include "make.h"
 #include "sver.h"
 #include "cfg.h"
@@ -15,20 +15,22 @@
 int main(int argc, char *argv[])
 {
     SMake_Greet("Simple-Make");
-    XLogger_Init("smake", "NULL", 0, 0);
+    slog_init("smake", SLOG_ERROR, 0);
 
     SMakeContext smakeCtx;
     SMake_InitContext(&smakeCtx);
+
     if (SMake_ParseArgs(&smakeCtx, argc, argv))
     {
         SMake_ClearContext(&smakeCtx);
         return 0;
     }
 
-    XLoggerConfig logCfg;
-    XLogger_ConfigGet(&logCfg);
-    logCfg.nLogLevel = smakeCtx.nVerbose;
-    XLogger_ConfigSet(&logCfg);
+
+    SLogConfig logCfg;
+    slog_config_get(&logCfg);
+    logCfg.nFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
+    slog_config_set(&logCfg);
 
     SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
     if (SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
@@ -36,7 +38,7 @@ int main(int argc, char *argv[])
         if (SMake_ParseProject(&smakeCtx))
         {
             if (SMake_WriteMake(&smakeCtx)) 
-                XLog_Live(0, "Successfuly generated Makefile");
+                slog("Successfuly generated Makefile");
         }
     }
 

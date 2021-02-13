@@ -7,7 +7,7 @@
  */
 
 #include "stdinc.h"
-#include "xlog.h"
+#include "slog.h"
 #include "xstr.h"
 #include "make.h"
 #include "sver.h"
@@ -16,10 +16,20 @@
 extern char *optarg;
 static void SMake_CopyPath(char *pDst, int nSize, const char *pSrc)
 {
-    xstrncpy(pDst, pSrc, nSize);
+    xstrncpy(pDst, nSize, pSrc);
     int nLength = strlen(pDst);
     if (pDst[nLength-1] == '/')
         pDst[nLength-1] = '\0';
+}
+
+int SMake_GetLogFlags(uint8_t nVerbose)
+{
+    int nLogFlags = SLOG_ERROR | SLOG_WARN;
+    if (nVerbose) nLogFlags |= SLOG_NOTAG;
+    if (nVerbose > 1) nLogFlags |= SLOG_INFO;
+    if (nVerbose > 2) nLogFlags |= SLOG_DEBUG;
+    if (nVerbose > 3) nLogFlags = SLOG_FLAGS_ALL;
+    return nLogFlags;
 }
 
 int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
@@ -38,25 +48,25 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 SMake_CopyPath(pCtx->sPath, sizeof(pCtx->sPath), optarg);
                 break;
             case 'c':
-                xstrncpy(pCtx->sConfig, optarg, sizeof(pCtx->sConfig));
+                xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), optarg);
                 break;
             case 'e':
                 SMake_CopyPath(pCtx->sExcept, sizeof(pCtx->sExcept), optarg);
                 break;
             case 'b':
-                SMake_CopyPath(pCtx->sBuild, sizeof(pCtx->sBuild), optarg);
+                SMake_CopyPath(pCtx->sBinary, sizeof(pCtx->sBinary), optarg);
                 break;
             case 'i':
-                SMake_CopyPath(pCtx->sInstall, sizeof(pCtx->sInstall), optarg);
+                SMake_CopyPath(pCtx->sIncludes, sizeof(pCtx->sIncludes), optarg);
                 break;
             case 'f':
-                xstrncpy(pCtx->sFlags, optarg, sizeof(pCtx->sFlags));
+                xstrncpy(pCtx->sFlags, sizeof(pCtx->sFlags), optarg);
                 break;
             case 'l':
-                xstrncpy(pCtx->sLibs, optarg, sizeof(pCtx->sLibs));
+                xstrncpy(pCtx->sLibs, sizeof(pCtx->sLibs), optarg);
                 break;
             case 'p':
-                xstrncpy(pCtx->sName, optarg, sizeof(pCtx->sName));
+                xstrncpy(pCtx->sName, sizeof(pCtx->sName), optarg);
                 break;
             case 'v':
                 pCtx->nVerbose = atoi(optarg);
@@ -95,19 +105,19 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
         }
         else if (strcmp(sName, "NAME") == 0)
         {
-            xstrncpy(pCtx->sName, sArg, sizeof(pCtx->sName));
-        }
-        else if (strcmp(sName, "BUILD") == 0)
-        {
-            xstrncpy(pCtx->sBuild, sArg, sizeof(pCtx->sBuild));
+            xstrncpy(pCtx->sName, sizeof(pCtx->sName), sArg);
         }
         else if (strcmp(sName, "OUTPUT") == 0)
         {
-            xstrncpy(pCtx->sOutDir, sArg, sizeof(pCtx->sOutDir));
+            xstrncpy(pCtx->sOutDir, sizeof(pCtx->sOutDir), sArg);
         }
-        else if (strcmp(sName, "INSTALL") == 0)
+        else if (strcmp(sName, "BINARY_DIR") == 0)
         {
-            xstrncpy(pCtx->sInstall, sArg, sizeof(pCtx->sInstall));
+            xstrncpy(pCtx->sBinary, sizeof(pCtx->sBinary), sArg);
+        }
+        else if (strcmp(sName, "HEADER_DIR") == 0)
+        {
+            xstrncpy(pCtx->sIncludes, sizeof(pCtx->sIncludes), sArg);
         }
         else if (strcmp(sName, "EXCLUDE") == 0)
         {

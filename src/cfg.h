@@ -18,6 +18,7 @@ extern "C" {
 
 int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[]);
 int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath);
+int SMake_GetLogFlags(uint8_t nVerbose);
 
 #ifdef __cplusplus
 }

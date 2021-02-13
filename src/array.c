@@ -1,9 +1,11 @@
 /*
- *  xutils/array.c
+ *  libxutils/src/array.c
  *
- *  Copyleft (C) 2019 Sun Dro (a.k.a. kala13x)
- *
- * Dynamically allocated array with performance sorting features
+ *  This source is part of "libxutils" project
+ *  2015-2020  Sun Dro (f4tb0y@protonmail.com)
+ * 
+ * Dynamically allocated data holder with 
+ * performance sorting and search features
  */
 
 #include <stdio.h>
@@ -16,7 +18,7 @@ XArrayData *XArray_NewData(void *pData, size_t nSize, uint64_t nKey)
     XArrayData *pNewData = (XArrayData*)malloc(sizeof(XArrayData));
     if (pNewData == NULL) return NULL;
 
-    if (nSize > 0 && pData != NULL) 
+    if (pData != NULL && nSize > 0) 
     {
         pNewData->pData = malloc(nSize);
         if (pNewData->pData == NULL)
@@ -42,19 +44,15 @@ void XArray_FreeData(XArrayData *pArrData)
 {
     if (pArrData != NULL)
     {
-        if (pArrData->pData && pArrData->nSize)
-        {
+        if (pArrData->pData && 
+            pArrData->nSize > 0) 
             free(pArrData->pData);
-            pArrData->pData = NULL;
-            pArrData->nSize = 0;
-        }
 
         free(pArrData);
-        pArrData = NULL;
     }
 }
 
-void* XArray_Init(XArray *pArr, int nSize, int nFixed)
+void* XArray_Init(XArray *pArr, size_t nSize, uint8_t nFixed)
 {
     pArr->pData = (void**)malloc(sizeof(void*) * nSize);
     if (pArr->pData == NULL) return NULL;
@@ -105,15 +103,14 @@ void XArray_Destroy(XArray *pArr)
 
 int XArray_CheckSpace(XArray *pArr)
 {
-    pArr->eStatus = (pArr->nUsed >= pArr->nLength) ?
+    pArr->eStatus = (pArr->nUsed >= pArr->nLength)?
             XARRAY_STATUS_FULL : XARRAY_STATUS_OK;
-
-    return pArr->eStatus == XARRAY_STATUS_FULL ? 0 : 1;
+    return !(pArr->eStatus == XARRAY_STATUS_FULL);
 }
 
-int XArray_Realloc(XArray *pArr)
+size_t XArray_Realloc(XArray *pArr)
 {
-    if (pArr->nFixed) return 0;
+    if (pArr->nFixed) return pArr->nLength;
     void *pData = NULL;
     size_t nLength = 0;
 
@@ -127,7 +124,6 @@ int XArray_Realloc(XArray *pArr)
         nLength = pArr->nLength / 2;
         pData = realloc(pArr->pData, sizeof(void*) * nLength);
     }
-    else return pArr->nLength;
 
     if (pData != NULL)
     {
@@ -141,14 +137,18 @@ int XArray_Realloc(XArray *pArr)
         return nLength;
     }
 
-    return 0;
+    return pArr->nLength;
 }
 
 int XArray_Add(XArray *pArr, XArrayData *pNewData)
 {
-    if (!XArray_CheckSpace(pArr)) return 0;
+    if (!XArray_CheckSpace(pArr))
+    {
+        XArray_FreeData(pNewData);
+        return -1;
+    }
 
-    if (pArr->pData && pNewData)
+    if (pArr->pData != NULL)
     {
         pArr->pData[pArr->nUsed] = pNewData;
         pArr->nUsed++;
@@ -157,22 +157,20 @@ int XArray_Add(XArray *pArr, XArrayData *pNewData)
     {
         pArr->eStatus = XARRAY_STATUS_INVALID;
         XArray_FreeData(pNewData);
-        return 0;
+        return -2;
     }
 
     int nVal = XArray_Realloc(pArr);
-    return nVal ? pArr->nUsed : 0;
+    return nVal ? pArr->nUsed : -3;
 }
 
 int XArray_AddData(XArray *pArr, void *pData, size_t nSize)
 {
-    if (!XArray_CheckSpace(pArr)) return 0;
-
     XArrayData *pNewData = XArray_NewData(pData, nSize, 0);
     if (pNewData == NULL) 
     {
         pArr->eStatus = XARRAY_STATUS_NO_MEMORY;
-        return 0;
+        return -2;
     }
 
     int nCurrent = XArray_Add(pArr, pNewData);
@@ -181,13 +179,11 @@ int XArray_AddData(XArray *pArr, void *pData, size_t nSize)
 
 int XArray_AddDataKey(XArray *pArr, void *pData, size_t nSize, uint64_t nKey)
 {
-    if (!XArray_CheckSpace(pArr)) return 0;
-
     XArrayData *pNewData = XArray_NewData(pData, nSize, nKey);
     if (pNewData == NULL)
     {
         pArr->eStatus = XARRAY_STATUS_NO_MEMORY;
-        return 0;
+        return -2;
     }
 
     int nCurrent = XArray_Add(pArr, pNewData);
@@ -221,28 +217,21 @@ uint64_t XArray_GetKey(XArray *pArr, int nIndex)
     return pArrData ? pArrData->nKey : 0;
 }
 
-void XArray_Remove(XArray *pArr, int nIndex)
+XArrayData* XArray_Remove(XArray *pArr, int nIndex)
 {
     XArrayData *pData = XArray_Get(pArr, nIndex);
-    if (pData != NULL)
+    if (pData == NULL) return NULL;
+
+    unsigned int i;
+    for (i = nIndex; i < pArr->nUsed; i++)
     {
-        XArray_FreeData(pData);
-        unsigned int i;
-
-        for (i = nIndex; i < pArr->nUsed; i++)
-        {
-            if ((i + 1) < pArr->nUsed)
-            {
-                pData = XArray_Get(pArr, i + 1);
-                XArray_Set(pArr, i, pData);
-            }
-        }
-
-        XArray_Set(pArr, pArr->nUsed-1, NULL);
-        pArr->nUsed--;
+        if ((i + 1) >= pArr->nUsed) break;
+        pArr->pData[i] = pArr->pData[i+1];
     }
 
+    pArr->pData[--pArr->nUsed] = NULL;
     XArray_Realloc(pArr);
+    return pData;
 }
 
 void XArray_Delete(XArray *pArr, int nIndex)
@@ -278,8 +267,8 @@ XArrayData* XArray_SetData(XArray *pArr, int nIndex, void *pData, size_t nSize)
 
 XArrayData* XArray_Insert(XArray *pArr, int nIndex,  XArrayData *pData)
 {
-    if (!XArray_CheckSpace(pArr)) return 0;
-    
+    if (!XArray_CheckSpace(pArr)) return NULL;
+
     void *pOldData = XArray_Set(pArr, nIndex, pData);
     if (pOldData == NULL) return NULL;
 
@@ -295,7 +284,7 @@ XArrayData* XArray_Insert(XArray *pArr, int nIndex,  XArrayData *pData)
 
 XArrayData* XArray_InsertData(XArray *pArr, int nIndex, void *pData, size_t nSize)
 {
-    if (!XArray_CheckSpace(pArr)) return 0;
+    if (!XArray_CheckSpace(pArr)) return NULL;
 
     XArrayData *pNewData = XArray_NewData(pData, nSize, 0);
     if (pNewData == NULL)
@@ -360,28 +349,90 @@ void XArray_QuickSort(XArray *pArr, int(*compare)(const void*, const void*), int
 
 void XArray_Sort(XArray *pArr, int(*compare)(const void*, const void*))
 {
+    if (pArr == NULL || pArr->nUsed <= 0) return;
     XArray_QuickSort(pArr, compare, 0, pArr->nUsed-1);
 }
 
-void XArray_SortBySize(XArray *pArr)
+void XArray_SortBy(XArray *pArr, int nSortBy)
 {
-    XArray_Sort(pArr, XArray_CompareSize);
+    if (nSortBy == XARRAY_SORTBY_SIZE) 
+        XArray_Sort(pArr, XArray_CompareSize);
+    else if (nSortBy == XARRAY_SORTBY_KEY)
+        XArray_Sort(pArr, XArray_CompareKey);
 }
 
-void XArray_SortByKey(XArray *pArr)
+void XArray_BubbleSort(XArray *pArr, int(*compare)(const void*, const void*))
 {
-    XArray_Sort(pArr, XArray_CompareKey);
-}
+    if (pArr == NULL || pArr->nUsed <= 0) return;
+    long i, j;
 
-int XArray_Search(XArray *pArr, uint64_t nKey)
-{
-    if (nKey < 0 || !pArr || !pArr->nUsed) return -1;
-    int i, nUsedSize = XArray_GetUsedSize(pArr);
-
-    for (i = 0; i < nUsedSize; i++)
+    for (i = 0 ; i < pArr->nUsed-1; i++) 
     {
-        int nArrKey = XArray_GetKey(pArr, i);
-        if (nKey == nArrKey) return i;
+        for (j = 0 ; j < pArr->nUsed-i-1; j++) 
+        {
+            if (compare((void*)pArr->pData[j], (void*)pArr->pData[j+1]))
+            {
+                XArrayData *pData = pArr->pData[j];
+                pArr->pData[j] = pArr->pData[j+1];
+                pArr->pData[j+1] = pData;
+            }
+        }
+    }
+}
+
+int XArray_LinearSearch(XArray *pArr, uint64_t nKey)
+{
+    if (pArr == NULL || pArr->nUsed <= 0) return -1;
+    int i = 0;
+
+    for (i = 0; i < pArr->nUsed; i++)
+    {
+        XArrayData *pData = pArr->pData[i];
+        if (nKey == pData->nKey) return i;
+    }
+
+    return -1;
+}
+
+int XArray_SentinelSearch(XArray *pArr, uint64_t nKey)
+{
+    if (pArr == NULL || pArr->nUsed <= 0) return -1;
+    int i, nLast = pArr->nUsed - 1;
+
+    XArrayData *pLast = pArr->pData[nLast];
+    if (pLast->nKey == nKey) return nLast;
+
+    XArrayData term = {.nKey = nKey, .nSize = 0, .pData = NULL};
+    pArr->pData[nLast] = &term;
+
+    for (i = 0;; i++)
+    {
+        XArrayData *pData = pArr->pData[i];
+        if (nKey == pData->nKey)
+        {
+            pArr->pData[nLast] = pLast;
+            return (i < nLast) ? i : -1;
+        }
+    }
+
+    return -1;
+}
+
+int XArray_DoubleSearch(XArray *pArr, uint64_t nKey)
+{
+    if (pArr == NULL || pArr->nUsed <= 0) return -1;
+    int nFront = 0, nBack = pArr->nUsed - 1;
+
+    while (nFront <= nBack)
+    {
+        XArrayData *pData = pArr->pData[nFront];
+        if (nKey == pData->nKey) return nFront;
+
+        pData = pArr->pData[nBack];
+        if (nKey == pData->nKey) return nBack;
+    
+        nFront++;
+        nBack--;
     }
 
     return -1;
@@ -389,19 +440,18 @@ int XArray_Search(XArray *pArr, uint64_t nKey)
 
 int XArray_BinarySearch(XArray *pArr, uint64_t nKey)
 {
-    if (nKey < 0 || !pArr || !pArr->nUsed) return -1;
-    int nRight = pArr->nUsed - 1;
-    int nLeft = 0;
+    if (pArr == NULL || pArr->nUsed <= 0) return -1;
+    int nLeft = 0, nRight = pArr->nUsed - 1;
 
-    int nArrKey = XArray_GetKey(pArr, nLeft);
-    if (nKey == nArrKey) return nLeft;
+    XArrayData *pData = pArr->pData[nLeft];
+    if (pData->nKey == nKey) return nLeft;
 
     while (nLeft <= nRight)
     {
         int nMiddle = nLeft + (nRight - nLeft) / 2;
-        int nArrKey = XArray_GetKey(pArr, nMiddle);
-        if (nKey ==nArrKey) return nMiddle;
-        if (nArrKey < nKey) nLeft = nMiddle + 1;
+        pData = pArr->pData[nMiddle];
+        if (pData->nKey == nKey) return nMiddle;
+        if (pData->nKey < nKey) nLeft = nMiddle + 1;
         else nRight = nMiddle - 1; 
     }
   
@@ -410,12 +460,12 @@ int XArray_BinarySearch(XArray *pArr, uint64_t nKey)
 
 size_t XArray_GetUsedSize(XArray *pArr)
 {
-    if (!pArr) return 0;
+    if (pArr == NULL) return 0;
     return pArr->nUsed;
 }
 
 size_t XArray_GetArraySize(XArray *pArr)
 {
-    if (!pArr) return 0;
+    if (pArr == NULL) return 0;
     return pArr->nLength;
 }

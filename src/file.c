@@ -1,15 +1,16 @@
 /*
- *  xutils/file.h
- * 
- *  Copyleft (C) 2015  Sun Dro (a.k.a. kala13x)
+ *  libxutils/src/file.c
  *
- * This source includes implementations of POSIX 
- * standart file and directory operations.
+ *  This source is part of "libxutils" project
+ *  2015-2020  Sun Dro (f4tb0y@protonmail.com)
+ * 
+ * Implementation of POSIX standart 
+ * file and directory functionality.
  */
 
 #include "stdinc.h"
 #include "file.h"
-#include "xlog.h"
+#include "xstr.h"
 
 #ifdef PATH_MAX
 #define XFILE_BUF_SIZE PATH_MAX
@@ -101,16 +102,17 @@ size_t XFile_GetSize(XFile *pFile)
     return nSize;
 }
 
-char* XFile_ReadBuffer(XFile *pFile)
+uint8_t* XFile_ReadBuffer(XFile *pFile)
 {
     size_t nSize = XFile_GetSize(pFile);
-    if (nSize <= 0) return NULL;
+    if (!nSize) return NULL;
 
-    char *pBuffer = malloc(nSize + 1);
+    uint8_t *pBuffer = (uint8_t*)malloc(nSize + 1);
     if (pBuffer == NULL) return NULL;
 
-    XFile_Read(pFile, pBuffer, nSize);
-    pBuffer[nSize + 1] = '\0';
+    int nBytes = XFile_Read(pFile, pBuffer, nSize);
+    size_t nTermPos = (nBytes > 0) ? nBytes : 0;
+    pBuffer[nTermPos] = '\0';
 
     return pBuffer;
 }
@@ -148,7 +150,7 @@ int XFile_GetLine(XFile *pFile, char* pLine, size_t nSize)
             if (pLine != NULL && nSize > 0)
             {
                 sReadBuf[nRead-nBytes] = '\0';
-                strncpy(pLine, sReadBuf, nSize);
+                xstrncpy(pLine, nSize, sReadBuf);
             }
 
             return XFILE_SUCCESS;
@@ -169,7 +171,7 @@ int XFile_GetLines(XFile *pFile)
     int nLineNumber = 0;
 
     size_t nSize = XFile_GetSize(pFile);
-    if (nSize <= 0) return XFILE_INVALID;
+    if (!nSize) return XFILE_INVALID;
 
     int nRet = XFile_GetLine(pFile, NULL, nSize);
     while (nRet == XFILE_SUCCESS)
@@ -199,7 +201,8 @@ int XFile_ReadLine(XFile *pFile, char* pLine, size_t nSize, int nLineNumber)
 
 int XPath_Exists(const char *pPath)
 {
-    struct stat st = {0};
+    struct stat st;
+    memset(&st, 0, sizeof(struct stat));
     if (stat(pPath, &st) == -1) return 0;
     return 1;
 }
@@ -213,22 +216,37 @@ int XPath_SetPerm(const char *pPath, char mode[])
 
 int XPath_CopyFile(const char *pSrc, const char *pDst)
 {
-	XFile srcFile, dstFile;
-	XFile_Open(&srcFile, pSrc, "r");
-	if (srcFile.nFD < 0) return XFILE_INVALID;
+    XFile srcFile, dstFile;
+    XFile_Open(&srcFile, pSrc, "r");
+    if (srcFile.nFD < 0) return XFILE_INVALID;
 
-	XFile_Open(&dstFile, pDst, "cwt");
+    XFile_Open(&dstFile, pDst, "cwt");
     if (dstFile.nFD < 0)
     {
         XFile_Close(&srcFile);
         return XFILE_INVALID;
     }
 
-	int nRet = XFile_Copy(&srcFile, &dstFile);
-	XFile_Close(&srcFile);
-	XFile_Close(&dstFile);
+    int nRet = XFile_Copy(&srcFile, &dstFile);
+    XFile_Close(&srcFile);
+    XFile_Close(&dstFile);
 
     return nRet;
+}
+
+int XPath_ReadFile(const char *pPath, uint8_t *pBuffer, size_t nSize)
+{
+    pBuffer[0] = '\0';
+    XFile fileCtx;
+
+    if (XFile_Open(&fileCtx, pPath, "r") < 0) return 0;
+    int nBytes = XFile_Read(&fileCtx, pBuffer, nSize);
+
+    size_t nTermPosit = (nBytes > 0) ? nBytes : 0;
+    pBuffer[nTermPosit] = '\0';
+    XFile_Close(&fileCtx);
+
+    return 1;
 }
 
 int XDir_Open(XDir *pDir, const char *pPath)
@@ -264,7 +282,7 @@ int XDir_Read(XDir *pDir, char *pFile, size_t nSize)
            continue;
 
         if (pFile != NULL && nSize > 0)
-            strncpy(pFile, pDir->pEntry->d_name, nSize);
+            xstrncpy(pFile, nSize, pDir->pEntry->d_name);
 
         return 1;
     }
@@ -301,7 +319,7 @@ int XDir_Create(const char *pDir, mode_t nMode)
     int nStatus = 0;
 
     int nLen = snprintf(sDir, sizeof(sDir), "%s", pDir);
-    if (nLen < 0) return nStatus;
+    if (nLen <= 0) return nStatus;
 
     if(sDir[nLen-1] == '/') sDir[nLen-1] = 0;
     char *pOffset = NULL;
@@ -344,10 +362,8 @@ int XDir_Remove(const char *pPath)
     {
         while (XDir_Read(&dir, NULL, 0) > 0)
         {
-            size_t nSize = nLength + strlen(dir.pEntry->d_name) + 2;
-            char sPath[nSize];
-
-            snprintf(sPath, nSize, "%s/%s", pPath, dir.pEntry->d_name);
+            char sPath[nLength + strlen(dir.pEntry->d_name) + 2];
+            snprintf(sPath, sizeof(sPath), "%s/%s", pPath, dir.pEntry->d_name);
             nStatus = XDir_Unlink(sPath);
         }
 

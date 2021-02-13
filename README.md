@@ -11,17 +11,17 @@ sudo make install
 ```
 
 ### Usage
-If you want to use smake, just cd to the source directory of your project and write smake. It will automatically scan files at working directory and generate Makefile. SMake also has some options to make your steps easier. Options are:
+If you want to use smake, just cd to the source directory of your project and write smake. It will automatically scan files at working directory and generate `Makefile`. SMake also has some options to make your steps easier. Options are:
 ```
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
-  -e <paths>          # Exclude files or directories
-  -b <path>           # Build destination
+  -b <path>           # Install destination for binary
   -c <path>           # Path to config file
-  -i <path>           # Install destination
+  -e <paths>          # Exclude files or directories
+  -i <path>           # Install destination for includes
   -o <path>           # Object output destination
+  -p <name>           # Program or library name
   -s <path>           # Path to source files
-  -p <name>           # Program name
   -d                  # Virtual directory
   -v                  # Verbosity level
   -x                  # Use CPP compiler
@@ -35,7 +35,18 @@ smake -f '-Wall' -l '-lrt -lpthread'
 
 With option `-p`, you can specify program name for your project, if you will run smake without this argument, smake will scan your files to search main function and your program name will be that filename where main() is located.
 
-Also if you will specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate Makefile to compile your project as the static or shared library.
+Also if you will specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
+
+This is an example create `Makefile` for static library and specify install location for the library and headers:
+```
+smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
+
+```
+
+The `Makefile` of this project is generated with command:
+```
+smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
+```
 
 ![alt tag](https://github.com/kala13x/smake/blob/master/smake.png)
 

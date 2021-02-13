@@ -10,20 +10,20 @@ ODIR = obj
 OBJ = o
 
 OBJS = smake.$(OBJ) \
-	xlog.$(OBJ) \
 	sver.$(OBJ) \
 	file.$(OBJ) \
 	array.$(OBJ) \
+	slog.$(OBJ) \
 	xstr.$(OBJ) \
 	cfg.$(OBJ) \
 	make.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
-INSTALL = /usr/bin
+INSTALL_BIN = /usr/bin
 VPATH = ./src
 
 .c.$(OBJ):
-	@test -d $(ODIR) || mkdir $(ODIR)
+	@test -d $(ODIR) || mkdir -p $(ODIR)
 	$(CC) $(CFLAGS) -c -o $(ODIR)/$@ $< $(LIBS)
 
 $(NAME):$(OBJS)
@@ -31,8 +31,8 @@ $(NAME):$(OBJS)
 
 .PHONY: install
 install:
-	@test -d $(INSTALL) || mkdir $(INSTALL)
-	@install -m 0755 $(ODIR)/$(NAME) $(INSTALL)/
+	@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)
+	@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/
 
 .PHONY: clean
 clean:
