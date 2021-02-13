@@ -2,7 +2,7 @@
 SMake is small and simple tool which helps developers to automatically generate Makefiles for C/C++ projects. Software is written for educational purposes and is distributed in the hope that it will be useful for anyone interested in this field.
 
 ### Installation
-Installation is possible with Makefile
+Installation is easy because the smake does not use any additional dependencies. It can be installed on any linux / unix platform with a Makefile:
 ```
 git clone https://github.com/kala13x/smake.git
 cd smake
