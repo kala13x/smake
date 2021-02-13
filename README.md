@@ -30,7 +30,6 @@ If you want to use smake, just cd to the source directory of your project and wr
 For example, if you have project which needs to link `pthread` and `lrt` library and you need to compile it with `-Wall` flag, you must write:
 ```
 smake -f '-Wall' -l '-lrt -lpthread'
-
 ```
 
 With option `-p`, you can specify program name for your project, if you will run smake without this argument, smake will scan your files to search main function and your program name will be that filename where main() is located.
@@ -40,7 +39,6 @@ Also if you will specify program name with `.a` or `.so` extensions (`smake -p e
 This is an example create `Makefile` for static library and specify install location for the library and headers:
 ```
 smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
-
 ```
 
 The `Makefile` of this project is generated with command:
