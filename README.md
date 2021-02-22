@@ -32,7 +32,7 @@ For example, if you have project which needs to link `pthread` and `lrt` library
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
 
-With option `-p`, you can specify program name for your project, if you will run smake without this argument, smake will scan your files to search main function and your program name will be that filename where main() is located.
+With option `-p`, you can specify program name for your project, if you will run smake without this argument, smake will scan your files to search main function and your program name will be that filename where `main()` is located.
 
 Also if you will specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
 
