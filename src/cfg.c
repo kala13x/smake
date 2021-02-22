@@ -103,38 +103,42 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
             /* Skip comment */
             continue;
         }
-        else if (strcmp(sName, "NAME") == 0)
+        else if (!strcmp(sName, "NAME"))
         {
             xstrncpy(pCtx->sName, sizeof(pCtx->sName), sArg);
         }
-        else if (strcmp(sName, "OUTPUT") == 0)
+        else if (!strcmp(sName, "OUTPUT"))
         {
             xstrncpy(pCtx->sOutDir, sizeof(pCtx->sOutDir), sArg);
         }
-        else if (strcmp(sName, "BINARY_DIR") == 0)
+        else if (!strcmp(sName, "BINARY_DIR"))
         {
             xstrncpy(pCtx->sBinary, sizeof(pCtx->sBinary), sArg);
         }
-        else if (strcmp(sName, "HEADER_DIR") == 0)
+        else if (!strcmp(sName, "HEADER_DIR"))
         {
             xstrncpy(pCtx->sIncludes, sizeof(pCtx->sIncludes), sArg);
         }
-        else if (strcmp(sName, "EXCLUDE") == 0)
+        else if (!strcmp(sName, "EXCLUDE"))
         {
             if (strlen(pCtx->sExcept)) strcat(pCtx->sExcept, ":");
             strcat(pCtx->sExcept, sArg);
         }
-        else if (strcmp(sName, "FLAGS") == 0)
+        else if (!strcmp(sName, "FLAGS"))
         {
             if (strlen(pCtx->sFlags)) strcat(pCtx->sFlags, " ");
             strcat(pCtx->sFlags, sArg);
         }
-        else if (strcmp(sName, "LIBS") == 0)
+        else if (!strcmp(sName, "LIBS"))
         {
             if (strlen(pCtx->sLibs)) strcat(pCtx->sLibs, " ");
             strcat(pCtx->sLibs, sArg);
         }
-        else if (strcmp(sName, "CXX") == 0)
+        else if (!strcmp(sName, "VERBOSE"))
+        {
+            pCtx->nVerbose = atoi(sArg);
+        }
+        else if (!strcmp(sName, "CXX"))
         {
             pCtx->nCPP = atoi(sArg);
         }

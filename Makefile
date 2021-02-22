@@ -9,14 +9,14 @@ NAME = smake
 ODIR = obj
 OBJ = o
 
-OBJS = smake.$(OBJ) \
-	sver.$(OBJ) \
+OBJS = xstr.$(OBJ) \
 	file.$(OBJ) \
-	array.$(OBJ) \
+	smake.$(OBJ) \
+	sver.$(OBJ) \
+	make.$(OBJ) \
 	slog.$(OBJ) \
-	xstr.$(OBJ) \
 	cfg.$(OBJ) \
-	make.$(OBJ)
+	array.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
 INSTALL_BIN = /usr/bin

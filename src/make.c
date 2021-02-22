@@ -62,16 +62,16 @@ void SMake_InitContext(SMakeContext *pCtx)
     pCtx->fileArr.clearCb = SMake_ClearCallback;
     pCtx->objArr.clearCb = SMake_ClearCallback;
 
-    memset(pCtx->sIncludes, 0, sizeof(pCtx->sIncludes));
-    memset(pCtx->sConfig, 0, sizeof(pCtx->sConfig));
-    memset(pCtx->sBinary, 0, sizeof(pCtx->sBinary));
-    memset(pCtx->sFlags, 0, sizeof(pCtx->sFlags));
-    memset(pCtx->sVPath, 0, sizeof(pCtx->sVPath));
-    memset(pCtx->sName, 0, sizeof(pCtx->sName));
-    memset(pCtx->sMain, 0, sizeof(pCtx->sMain));
-    memset(pCtx->sLibs, 0, sizeof(pCtx->sLibs));
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
-    pCtx->sPath[1] = pCtx->sOutDir[1] = 0;
+    pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
+    pCtx->sIncludes[0] = XSTRNULL;
+    pCtx->sConfig[0] = XSTRNULL;
+    pCtx->sBinary[0] = XSTRNULL;
+    pCtx->sFlags[0] = XSTRNULL;
+    pCtx->sVPath[0] = XSTRNULL;
+    pCtx->sName[0] = XSTRNULL;
+    pCtx->sMain[0] = XSTRNULL;
+    pCtx->sLibs[0] = XSTRNULL;
     pCtx->nVerbose = 0;
     pCtx->nVPath = 0;
     pCtx->nCPP = 0;
@@ -95,7 +95,7 @@ int SMake_GetFileType(const char *pPath, int nLen)
 int SMake_IsExcluded(SMakeContext *pCtx, const char *pPath)
 {
     char sExcluded[SMAKE_LINE_MAX];
-    strncpy(sExcluded, pCtx->sExcept, sizeof(sExcluded));
+    xstrncpy(sExcluded, sizeof(sExcluded), pCtx->sExcept);
 
     char *pExclude = strtok(sExcluded, ":");
     while(pExclude != NULL)
@@ -181,7 +181,7 @@ int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
 
                 if (strlen(pCtx->sMain))
                 {
-                    slog_error("Main function already exits: %s", pCtx->sMain);
+                    slog_error("Main function already exists: %s", pCtx->sMain);
                     slog_info("You can exclude file or directory with argument: -e");
                     nRetVal = 0;
                 }
@@ -207,7 +207,7 @@ int SMake_ParseProject(SMakeContext *pCtx)
         if (pFile != NULL)
         {
             char sName[SMAKE_NAME_MAX];
-            strncpy(sName, pFile->sName, sizeof(sName));
+            xstrncpy(sName, sizeof(sName), pFile->sName);
 
             int nLength = strlen(sName);
             int nLastBytes = 0;
@@ -224,14 +224,21 @@ int SMake_ParseProject(SMakeContext *pCtx)
                 }
             }
 
-            if (!nLastBytes) continue;
-            memset(&sName[nLength-nLastBytes], 0, nLastBytes);
+            if (!nLastBytes)
+            {
+                slog_debug("Skipping file: %s/%s", pFile->sPath, pFile->sName);
+                continue;
+            }
+
+            nLength -= nLastBytes;
+            sName[nLength] = XSTRNULL;
 
             char sPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
             snprintf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
+            if (SMake_FindMain(pCtx, sPath)) xstrncpy(pCtx->sMain, sizeof(pCtx->sMain), sName);
 
-            if (SMake_FindMain(pCtx, sPath)) strncpy(pCtx->sMain, sName, sizeof(pCtx->sMain));
-            strncat(sName, ".$(OBJ)", 8);
+            size_t nLeftBytes = sizeof(sName) - nLength;
+            strncat(sName, ".$(OBJ)", nLeftBytes);
 
             SMakeFile *pObj = SMake_FileNew(pFile->sPath, sName, SMAKE_FILE_OBJ);
             if (pObj != NULL)
@@ -239,8 +246,8 @@ int SMake_ParseProject(SMakeContext *pCtx)
                 if (strstr(pCtx->sPath, pObj->sPath) == NULL &&
                     strstr(pCtx->sVPath, pObj->sPath) == NULL)
                 {
-                    strcat(pCtx->sVPath, pObj->sPath);
-                    strcat(pCtx->sVPath, ":");
+                    nLeftBytes = sizeof(pCtx->sVPath) - strlen(pCtx->sVPath);
+                    xstrncatf(pCtx->sVPath, nLeftBytes, "%s:", pObj->sPath);
                 }
 
                 slog_debug("Loaded object: %s/%s", pObj->sPath, sName);
@@ -276,7 +283,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     int nStatic, nShared;
     nStatic = nShared = 0;
 
-    if (!strlen(pCtx->sName)) strncpy(pCtx->sName, pCtx->sMain, sizeof(pCtx->sName));
+    if (!strlen(pCtx->sName)) xstrncpy(pCtx->sName, sizeof(pCtx->sName), pCtx->sMain);
     if (strstr(pCtx->sName, ".a") != NULL) nStatic = 1;
     if (strstr(pCtx->sName, ".so") != NULL) nShared = 1;
 
@@ -325,16 +332,16 @@ int SMake_WriteMake(SMakeContext *pCtx)
     {
         fprintf(pFile, "\n.PHONY: install\ninstall:\n");
 
-        if (nBinary)
-        {
-            fprintf(pFile, "\t@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)\n");
-            fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
-        }
-
         if (nIncludes)
         {
             fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
             fprintf(pFile, "\t@cp -r $(VPATH)/*.h $(INSTALL_INC)/\n");
+        }
+
+        if (nBinary)
+        {
+            fprintf(pFile, "\t@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)\n");
+            fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
         }
     }
 

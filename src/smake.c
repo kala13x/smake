@@ -26,13 +26,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
+    int nLogFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
 
     SLogConfig logCfg;
     slog_config_get(&logCfg);
-    logCfg.nFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
+    logCfg.nFlags = nLogFlags;
     slog_config_set(&logCfg);
 
-    SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
     if (SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
     {
         if (SMake_ParseProject(&smakeCtx))
