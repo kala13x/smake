@@ -36,6 +36,7 @@ typedef struct {
 } SMakeFile;
 
 typedef struct {
+    char sCompiler[SMAKE_NAME_MAX];
     char sIncludes[SMAKE_PATH_MAX];
     char sOutDir[SMAKE_PATH_MAX];
     char sExcept[SMAKE_LINE_MAX];

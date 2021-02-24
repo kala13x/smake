@@ -64,6 +64,7 @@ void SMake_InitContext(SMakeContext *pCtx)
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
     pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
+    pCtx->sCompiler[0] = XSTRNULL;
     pCtx->sIncludes[0] = XSTRNULL;
     pCtx->sConfig[0] = XSTRNULL;
     pCtx->sBinary[0] = XSTRNULL;
@@ -283,6 +284,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     int nStatic, nShared;
     nStatic = nShared = 0;
 
+    if (strlen(pCtx->sCompiler)) fprintf(pFile, "%s = %s\n", pCompiler, pCtx->sCompiler);
     if (!strlen(pCtx->sName)) xstrncpy(pCtx->sName, sizeof(pCtx->sName), pCtx->sMain);
     if (strstr(pCtx->sName, ".a") != NULL) nStatic = 1;
     if (strstr(pCtx->sName, ".so") != NULL) nShared = 1;
@@ -294,7 +296,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     fprintf(pFile, "OBJ = o\n\n");
     fprintf(pFile, "OBJS = ");
 
-    int i, nObjs = XArray_GetUsedSize(&pCtx->objArr);
+    size_t i, nObjs = XArray_GetUsedSize(&pCtx->objArr);
     for (i = 0; i < nObjs; i++)
     {
         SMakeFile *pObj = (SMakeFile*)XArray_GetData(&pCtx->objArr, i);
@@ -311,8 +313,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
     int nVPathLen = strlen(pCtx->sVPath);
 
     fprintf(pFile, "OBJECTS = $(patsubst %%,$(ODIR)/%%,$(OBJS))\n");
-    if (nBinary) fprintf(pFile, "INSTALL_BIN = %s\n", pCtx->sBinary);
     if (nIncludes) fprintf(pFile, "INSTALL_INC = %s\n", pCtx->sIncludes);
+    if (nBinary) fprintf(pFile, "INSTALL_BIN = %s\n", pCtx->sBinary);
 
     if (pCtx->sVPath[nVPathLen-1] == ':') pCtx->sVPath[nVPathLen-1] = '\0';
     if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, pCtx->sVPath);
@@ -332,16 +334,16 @@ int SMake_WriteMake(SMakeContext *pCtx)
     {
         fprintf(pFile, "\n.PHONY: install\ninstall:\n");
 
-        if (nIncludes)
-        {
-            fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
-            fprintf(pFile, "\t@cp -r $(VPATH)/*.h $(INSTALL_INC)/\n");
-        }
-
         if (nBinary)
         {
             fprintf(pFile, "\t@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)\n");
             fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
+        }
+
+        if (nIncludes)
+        {
+            fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
+            fprintf(pFile, "\t@cp -r $(VPATH)/*.h $(INSTALL_INC)/\n");
         }
     }
 

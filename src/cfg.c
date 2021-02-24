@@ -35,7 +35,7 @@ int SMake_GetLogFlags(uint8_t nVerbose)
 int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
 {
     int nChar = 0;
-    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:l:p:v:d1:x1:h1")) != -1) 
+    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:d1:x1:h1")) != -1) 
     {
         switch (nChar)
         {
@@ -61,6 +61,9 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 break;
             case 'f':
                 xstrncpy(pCtx->sFlags, sizeof(pCtx->sFlags), optarg);
+                break;
+            case 'g':
+                xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), optarg);
                 break;
             case 'l':
                 xstrncpy(pCtx->sLibs, sizeof(pCtx->sLibs), optarg);
@@ -110,6 +113,10 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
         else if (!strcmp(sName, "OUTPUT"))
         {
             xstrncpy(pCtx->sOutDir, sizeof(pCtx->sOutDir), sArg);
+        }
+        else if (!strcmp(sName, "COMPILER"))
+        {
+            xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), sArg);
         }
         else if (!strcmp(sName, "BINARY_DIR"))
         {
