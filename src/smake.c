@@ -40,7 +40,10 @@ int main(int argc, char *argv[])
         if (SMake_ParseProject(&smakeCtx))
         {
             if (SMake_WriteMake(&smakeCtx))
+            {
                 slog("Successfuly generated Makefile");
+                nRetVal = 0;
+            }
         }
         else slog_error("Can not load object list");
     }
