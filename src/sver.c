@@ -48,7 +48,9 @@ static char *WhiteSpace(const int nLength)
 
 void SMake_Usage(const char *pName)
 {
+    SMake_Greet(SMAKE_FULL_NAME);
     int nLength = strlen(pName) + 6;
+ 
     printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>]\n", pName);
     printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>]\n", WhiteSpace(nLength));
     printf(" %s [-p <name>] [-s <path>] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));

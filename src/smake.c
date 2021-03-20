@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-    SMake_Greet("Simple-Make");
+    int nRetVal = 1;
     slog_init("smake", SLOG_ERROR, 0);
 
     SMakeContext smakeCtx;
@@ -23,11 +23,12 @@ int main(int argc, char *argv[])
     if (SMake_ParseArgs(&smakeCtx, argc, argv))
     {
         SMake_ClearContext(&smakeCtx);
-        return 0;
+        return nRetVal;
     }
 
     SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
     int nLogFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
+    if (smakeCtx.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
 
     SLogConfig logCfg;
     slog_config_get(&logCfg);
@@ -38,11 +39,13 @@ int main(int argc, char *argv[])
     {
         if (SMake_ParseProject(&smakeCtx))
         {
-            if (SMake_WriteMake(&smakeCtx)) 
+            if (SMake_WriteMake(&smakeCtx))
                 slog("Successfuly generated Makefile");
         }
+        else slog_error("Can not load object list");
     }
-
+    else slog_error("No input files found");
+    
     SMake_ClearContext(&smakeCtx);
-    return 0;
+    return nRetVal;
 }

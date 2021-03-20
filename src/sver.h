@@ -6,9 +6,11 @@
  * Get additional information about project
  */
 
+#define SMAKE_FULL_NAME       "Simple-Make"
+
 #define SMAKE_VERSION_MAX     1
 #define SMAKE_VERSION_MIN     0
-#define SMAKE_BUILD_NUMBER    22
+#define SMAKE_BUILD_NUMBER    23
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_
