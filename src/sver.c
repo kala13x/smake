@@ -69,8 +69,8 @@ void SMake_Usage(const char *pName)
     printf("  -v                  # Verbosity level\n");
     printf("  -x                  # Create Makefile for CPP\n");
     printf("  -h                  # Print version and usage\n\n");
-    printf("Hints:\n1) You can exclude multiple files and directories with \":\" tokenizer\n");
+    printf("Hints:\n1) You can exclude multiple files and directories with \"|\" tokenizer\n");
     printf("2) To build static/shared library use parameter: -p <name>.a/<name>.so\n");
     printf("3) You can specify the desired compiler like: -g arm-histbv320-linux-gcc\n");
-    printf("Example: %s -p lib.a -f '-Wall' -l '-lpthread' -e ./dir1:./file1:./file2\n\n", pName);
+    printf("Example: %s -p lib.a -f '-Wall' -l '-lpthread' -e ./dir1|./file1|./file2\n\n", pName);
 }
