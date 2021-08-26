@@ -9,7 +9,7 @@
 #include "stdinc.h"
 #include "slog.h"
 #include "make.h"
-#include "sver.h"
+#include "info.h"
 #include "cfg.h"
 
 int main(int argc, char *argv[])
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     int nLogFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
     if (smakeCtx.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
 
-    SLogConfig logCfg;
+    slog_config_t logCfg;
     slog_config_get(&logCfg);
     logCfg.nFlags = nLogFlags;
     slog_config_set(&logCfg);

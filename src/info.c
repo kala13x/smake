@@ -7,7 +7,7 @@
  */
 
 #include "stdinc.h"
-#include "sver.h"
+#include "info.h"
 
 const char* SMake_Version()
 {

@@ -7,10 +7,12 @@
  */
 
 #include "stdinc.h"
+#include "xjson.h"
 #include "slog.h"
 #include "xstr.h"
 #include "make.h"
-#include "sver.h"
+#include "info.h"
+#include "file.h"
 #include "cfg.h"
 
 extern char *optarg;
@@ -93,64 +95,96 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
 int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
 {
     const char *pCfgPath = strlen(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
-    char sName[SMAKE_NAME_MAX];
-    char sArg[SMAKE_LINE_MAX];
+    size_t nSize = 0;
+    XFile file;
 
-    FILE* pFile = fopen(pCfgPath, "r");
-    if (pFile == NULL) return 0;
-
-    while(fscanf(pFile, "%s %[^:\n]\n", sName, sArg) == 2)
+    if (XFile_Open(&file, pCfgPath, "r") < 0)
     {
-        if ((strlen(sName) > 0) && (sName[0] == '#'))
-        {
-            /* Skip comment */
-            continue;
-        }
-        else if (!strcmp(sName, "NAME"))
-        {
-            xstrncpy(pCtx->sName, sizeof(pCtx->sName), sArg);
-        }
-        else if (!strcmp(sName, "OUTPUT"))
-        {
-            xstrncpy(pCtx->sOutDir, sizeof(pCtx->sOutDir), sArg);
-        }
-        else if (!strcmp(sName, "COMPILER"))
-        {
-            xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), sArg);
-        }
-        else if (!strcmp(sName, "BINARY_DIR"))
-        {
-            xstrncpy(pCtx->sBinary, sizeof(pCtx->sBinary), sArg);
-        }
-        else if (!strcmp(sName, "HEADER_DIR"))
-        {
-            xstrncpy(pCtx->sIncludes, sizeof(pCtx->sIncludes), sArg);
-        }
-        else if (!strcmp(sName, "EXCLUDE"))
-        {
-            if (strlen(pCtx->sExcept)) strcat(pCtx->sExcept, ":");
-            strcat(pCtx->sExcept, sArg);
-        }
-        else if (!strcmp(sName, "FLAGS"))
-        {
-            if (strlen(pCtx->sFlags)) strcat(pCtx->sFlags, " ");
-            strcat(pCtx->sFlags, sArg);
-        }
-        else if (!strcmp(sName, "LIBS"))
-        {
-            if (strlen(pCtx->sLibs)) strcat(pCtx->sLibs, " ");
-            strcat(pCtx->sLibs, sArg);
-        }
-        else if (!strcmp(sName, "VERBOSE"))
-        {
-            pCtx->nVerbose = atoi(sArg);
-        }
-        else if (!strcmp(sName, "CXX"))
-        {
-            pCtx->nCPP = atoi(sArg);
-        }
+        sloge("Can not open file: %s (%s)", pCfgPath, strerror(errno));
+        return 0;
     }
 
-    fclose(pFile);
+    char *pBuffer = (char*)XFile_ReadBuffer(&file, &nSize);
+    if (pBuffer == NULL)
+    {
+        sloge("Can not read file: %s (%s)", pCfgPath, strerror(errno));
+        XFile_Close(&file);
+        return 0;
+    }
+
+    XFile_Close(&file);
+    xjson_t json;
+
+    if (!XJSON_Parse(&json, pBuffer, nSize))
+    {
+        char sError[256];
+        XJSON_GetErrorStr(&json, sError, sizeof(sError));
+        sloge("Failed to parse JSON: %s", sError);
+
+        XJSON_Destroy(&json);
+        free(pBuffer);
+        return 0;
+    }
+
+    xjson_obj_t *pBuildObj = XJSON_GetObject(json.pRootObj, "build");
+    if (pBuildObj != NULL)
+    {
+        xjson_obj_t *pExcludeArr = XJSON_GetObject(pBuildObj, "excludes");
+        if (pExcludeArr != NULL)
+        {
+            size_t i, nLength = XJSON_GetArrayLength(pExcludeArr);
+            for (i = 0; i < nLength; i++)
+            {
+                xjson_obj_t *pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
+                if (pValueObj != NULL)
+                {
+                    if (strlen(pCtx->sExcept)) strcat(pCtx->sExcept, "|");
+                    strcat(pCtx->sExcept, XJSON_GetString(pValueObj));
+                }
+            }
+        }
+
+        xjson_obj_t *pValueObj = XJSON_GetObject(pBuildObj, "libs");
+        if (pValueObj != NULL)
+        {
+            if (strlen(pCtx->sLibs)) strcat(pCtx->sLibs, " ");
+            strcat(pCtx->sLibs, XJSON_GetString(pValueObj));
+        }
+
+        pValueObj = XJSON_GetObject(pBuildObj, "flags");
+        if (pValueObj != NULL)
+        {
+            if (strlen(pCtx->sFlags)) strcat(pCtx->sFlags, " ");
+            strcat(pCtx->sFlags, XJSON_GetString(pValueObj));
+        }
+
+        pValueObj = XJSON_GetObject(pBuildObj, "name");
+        if (pValueObj != NULL) xstrncpy(pCtx->sName, sizeof(pCtx->sName), XJSON_GetString(pValueObj));
+
+        pValueObj = XJSON_GetObject(pBuildObj, "outputDir");
+        if (pValueObj != NULL) xstrncpy(pCtx->sOutDir, sizeof(pCtx->sOutDir), XJSON_GetString(pValueObj));
+
+        pValueObj = XJSON_GetObject(pBuildObj, "compiler");
+        if (pValueObj != NULL) xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), XJSON_GetString(pValueObj));
+
+        pValueObj = XJSON_GetObject(pBuildObj, "verbose");
+        if (pValueObj != NULL) pCtx->nVerbose = XJSON_GetInt(pValueObj);
+
+        pValueObj = XJSON_GetObject(pBuildObj, "cxx");
+        if (pValueObj != NULL) pCtx->nCPP = XJSON_GetBool(pValueObj);
+    }
+
+    xjson_obj_t *pInstallObj = XJSON_GetObject(json.pRootObj, "install");
+    if (pInstallObj != NULL)
+    {
+        xjson_obj_t *pValueObj = XJSON_GetObject(pInstallObj, "binaryDir");
+        if (pValueObj != NULL) xstrncpy(pCtx->sBinary, sizeof(pCtx->sBinary), XJSON_GetString(pValueObj));
+
+        pValueObj = XJSON_GetObject(pInstallObj, "headerDir");
+        if (pValueObj != NULL) xstrncpy(pCtx->sIncludes, sizeof(pCtx->sIncludes), XJSON_GetString(pValueObj));
+    }
+
+    XJSON_Destroy(&json);
+    free(pBuffer);
     return 1;
 }

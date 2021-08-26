@@ -1,4 +1,4 @@
-## Simple-Make - Version 1.0 build 21
+## Simple-Make - Version 1.0 build 25
 SMake is small and simple tool which helps developers to automatically generate Makefiles for C/C++ projects. Software is written for educational purposes and is distributed in the hope that it will be useful for anyone interested in this field.
 
 ### Installation
@@ -49,12 +49,24 @@ smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
 ![alt tag](https://github.com/kala13x/smake/blob/master/smake.png)
 
 ### Config file
-If you are so lazy and you wont to run smake anytime with arguments, you can write small config file and arguments will be parsed from it. SMake will search config file at current working directory with name `smake.cfg` or you can specify full path for config file with argument `-c`.
+If you are so lazy and you wont to run smake anytime with arguments, you can write small config file and arguments will be parsed from it. SMake will search config file at current working directory with name `smake.json` or you can specify full path for config file with argument `-c`.
 Config file example:
 ```
-LIBS -lpthread
-FLAGS -g -O2 -Wall
-CXX 0
+{
+    "build": {
+        "name": "libxutils.a",
+        "outputDir": "./obj",
+        "flags": "-g -O2 -Wall -D_XSOCK_USE_SSL",
+        "libs": "-lpthread -lssl -lcrypto",
+        "excludes": [
+            "./examples"
+        ]
+    },
+    "install": {
+        "binaryDir": "/usr/lib",
+        "headerDir": "/usr/include/xutils"
+    }
+}
 ```
 
 ### Feel free to fork

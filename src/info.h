@@ -1,5 +1,5 @@
 /*
- *  src/sver.h
+ *  src/info.h
  *
  *  Copyleft (C) 2020  Sun Dro (a.k.a. kala13x)
  *
@@ -10,7 +10,7 @@
 
 #define SMAKE_VERSION_MAX     1
 #define SMAKE_VERSION_MIN     0
-#define SMAKE_BUILD_NUMBER    24
+#define SMAKE_BUILD_NUMBER    25
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_

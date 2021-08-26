@@ -12,11 +12,11 @@ OBJ = o
 OBJS = xstr.$(OBJ) \
 	file.$(OBJ) \
 	smake.$(OBJ) \
-	sver.$(OBJ) \
+	info.$(OBJ) \
 	make.$(OBJ) \
 	slog.$(OBJ) \
 	cfg.$(OBJ) \
-	array.$(OBJ)
+	xjson.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
 INSTALL_BIN = /usr/bin

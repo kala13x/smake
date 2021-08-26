@@ -12,9 +12,8 @@
 #include "slog.h"
 #include "make.h"
 
-void SMake_ClearCallback(void *pData)
+void SMake_ClearCallback(xarray_data_t *pArrData)
 {
-    XArrayData *pArrData = (XArrayData*)pData;
     if (pArrData != NULL)
     {
         if (pArrData->pData)
@@ -23,9 +22,6 @@ void SMake_ClearCallback(void *pData)
             pArrData->pData = NULL;
             pArrData->nSize = 0;
         }
-
-        free(pArrData);
-        pArrData = NULL;
     }
 }
 
@@ -66,6 +62,7 @@ void SMake_InitContext(SMakeContext *pCtx)
     pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
     pCtx->sCompiler[0] = XSTRNULL;
     pCtx->sIncludes[0] = XSTRNULL;
+    pCtx->sExcept[0] = XSTRNULL;
     pCtx->sConfig[0] = XSTRNULL;
     pCtx->sBinary[0] = XSTRNULL;
     pCtx->sFlags[0] = XSTRNULL;

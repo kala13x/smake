@@ -10,9 +10,9 @@
 #define __SMAKE_MAKE_H__
 
 #include "stdinc.h"
-#include "array.h"
+#include "xjson.h"
 
-#define SMAKE_CFG_FILE "smake.cfg"
+#define SMAKE_CFG_FILE "smake.json"
 #define SMAKE_PATH_MAX 4096
 #define SMAKE_LINE_MAX 2048
 #define SMAKE_NAME_MAX 128
@@ -51,8 +51,8 @@ typedef struct {
     uint8_t nVerbose;
     uint8_t nVPath:1;
     uint8_t nCPP:1;
-    XArray fileArr;
-    XArray objArr;
+    xarray_t fileArr;
+    xarray_t objArr;
 } SMakeContext;
 
 void SMake_InitContext(SMakeContext *pCtx);

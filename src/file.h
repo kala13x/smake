@@ -45,11 +45,12 @@ int XFile_Write(XFile *pFile, void *pBuff, size_t nSize);
 int XFile_Read(XFile *pFile, void *pBuff, size_t nSize);
 
 size_t XFile_GetSize(XFile *pFile);
-uint8_t* XFile_ReadBuffer(XFile *pFile);
-int XFile_Copy(XFile *pIn, XFile *pOut);
+uint8_t* XFile_ReadBuffer(XFile *pFile, size_t *pSize);
+
+int XFile_ReadLine(XFile *pFile, char* pLine, size_t nSize, int nLineNumber);
 int XFile_GetLine(XFile *pFile, char* pLine, size_t nSize);
 int XFile_GetLines(XFile *pFile);
-int XFile_ReadLine(XFile *pFile, char* pLine, size_t nSize, int nLineNumber);
+int XFile_Copy(XFile *pIn, XFile *pOut);
 
 int XPath_Exists(const char *pPath);
 int XPath_SetPerm(const char *pPath, char mode[]);

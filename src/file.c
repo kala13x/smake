@@ -102,17 +102,25 @@ size_t XFile_GetSize(XFile *pFile)
     return nSize;
 }
 
-uint8_t* XFile_ReadBuffer(XFile *pFile)
+uint8_t* XFile_ReadBuffer(XFile *pFile, size_t *pSize)
 {
+    *pSize = 0;
+
     size_t nSize = XFile_GetSize(pFile);
-    if (!nSize) return NULL;
+    if (nSize <= 0) return NULL;
 
     uint8_t *pBuffer = (uint8_t*)malloc(nSize + 1);
     if (pBuffer == NULL) return NULL;
 
     int nBytes = XFile_Read(pFile, pBuffer, nSize);
-    size_t nTermPos = (nBytes > 0) ? nBytes : 0;
-    pBuffer[nTermPos] = '\0';
+    if (nBytes <= 0)
+    {
+        free(pBuffer);
+        return NULL;
+    }
+
+    *pSize = (nBytes > 0) ? nBytes : 0;
+    pBuffer[*pSize] = '\0';
 
     return pBuffer;
 }
@@ -246,7 +254,7 @@ int XPath_ReadFile(const char *pPath, uint8_t *pBuffer, size_t nSize)
     pBuffer[nTermPosit] = '\0';
     XFile_Close(&fileCtx);
 
-    return 1;
+    return nBytes;
 }
 
 int XDir_Open(XDir *pDir, const char *pPath)
@@ -353,7 +361,6 @@ int XDir_Unlink(const char *pPath)
 
 int XDir_Remove(const char *pPath)
 {
-    if (!XPath_Exists(pPath)) return XFILE_INVALID;
     size_t nLength = strlen(pPath);
     int nStatus = XFILE_INVALID;
     XDir dir;
@@ -362,9 +369,18 @@ int XDir_Remove(const char *pPath)
     {
         while (XDir_Read(&dir, NULL, 0) > 0)
         {
-            char sPath[nLength + strlen(dir.pEntry->d_name) + 2];
-            snprintf(sPath, sizeof(sPath), "%s/%s", pPath, dir.pEntry->d_name);
-            nStatus = XDir_Unlink(sPath);
+            size_t nSize = nLength + strlen(dir.pEntry->d_name) + 2;
+            char sPath[nSize];
+
+            snprintf(sPath, nSize, "%s/%s", pPath, dir.pEntry->d_name);
+            nStatus = XFILE_INVALID;
+            struct stat statbuf;
+
+            if (!stat(pPath, &statbuf))
+            {
+                nStatus = (S_ISDIR(statbuf.st_mode)) ?
+                    XDir_Remove(pPath) : unlink(pPath);
+            }
         }
 
         XDir_Close(&dir);
