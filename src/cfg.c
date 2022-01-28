@@ -100,7 +100,8 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
 
     if (XFile_Open(&file, pCfgPath, "r") < 0)
     {
-        sloge("Can not open file: %s (%s)", pCfgPath, strerror(errno));
+        if (strlen(pCtx->sConfig)) 
+            sloge("Can not open file: %s (%s)", pCfgPath, strerror(errno));
         return 0;
     }
 

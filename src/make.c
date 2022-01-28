@@ -337,10 +337,18 @@ int SMake_WriteMake(SMakeContext *pCtx)
             fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
         }
 
-        if (nIncludes)
+        if (nIncludes && strlen(pCtx->sVPath))
         {
             fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
-            fprintf(pFile, "\t@cp -r $(VPATH)/*.h $(INSTALL_INC)/\n");
+
+            char *pSavePtr = NULL;
+            char *ptr = strtok_r(pCtx->sVPath, ":", &pSavePtr);
+
+            while (ptr != NULL)
+            {
+                fprintf(pFile, "\t@cp -r %s/*.h $(INSTALL_INC)/\n", ptr);
+                ptr = strtok_r(NULL, ":", &pSavePtr);
+            }
         }
     }
 
