@@ -14,8 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-    int nRetVal = 1;
-    slog_init("smake", SLOG_ERROR, 0);
+    slog_init("smake", SLOG_ERROR | SLOG_WARN, 0);
 
     SMakeContext smakeCtx;
     SMake_InitContext(&smakeCtx);
@@ -23,7 +22,7 @@ int main(int argc, char *argv[])
     if (SMake_ParseArgs(&smakeCtx, argc, argv))
     {
         SMake_ClearContext(&smakeCtx);
-        return nRetVal;
+        return -1;
     }
 
     SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
@@ -33,22 +32,38 @@ int main(int argc, char *argv[])
     slog_config_t logCfg;
     slog_config_get(&logCfg);
     logCfg.nFlags = nLogFlags;
+    logCfg.nIndent = 1;
     slog_config_set(&logCfg);
 
-    if (SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
+    if (smakeCtx.nInit && !SMake_InitProject(&smakeCtx))
     {
-        if (SMake_ParseProject(&smakeCtx))
-        {
-            if (SMake_WriteMake(&smakeCtx))
-            {
-                slog("Successfuly generated Makefile");
-                nRetVal = 0;
-            }
-        }
-        else slog_error("Can not load object list");
+        sloge("Failed to initialize project");
+        SMake_ClearContext(&smakeCtx);
+        return -1;
     }
-    else slog_error("No input files found");
+
+    if (!SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
+    {
+        sloge("No input files found");
+        SMake_ClearContext(&smakeCtx);
+        return -1;
+    }
+
+    if (!SMake_ParseProject(&smakeCtx))
+    {
+        sloge("Can not load object list");
+        SMake_ClearContext(&smakeCtx);
+        return -1;
+    }
+
+    if (!SMake_WriteMake(&smakeCtx))
+    {
+        sloge("Failed to generate Makefile");
+        SMake_ClearContext(&smakeCtx);
+        return -1;
+    }
     
+    slogn("Successfuly generated Makefile");
     SMake_ClearContext(&smakeCtx);
-    return nRetVal;
+    return 0;
 }

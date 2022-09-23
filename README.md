@@ -22,6 +22,7 @@ If you want to use smake, just cd to the source directory of your project and wr
   -o <path>           # Object output destination
   -p <name>           # Program or library name
   -s <path>           # Path to source files
+  -I                  # Initialize project
   -d                  # Virtual directory
   -v                  # Verbosity level
   -x                  # Use CPP compiler

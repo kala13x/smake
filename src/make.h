@@ -49,8 +49,9 @@ typedef struct {
     char sName[SMAKE_NAME_MAX];
     char sMain[SMAKE_NAME_MAX];
     uint8_t nVerbose;
-    uint8_t nVPath:1;
-    uint8_t nCPP:1;
+    uint8_t nVPath;
+    uint8_t nCPP;
+    uint8_t nInit;
     xarray_t fileArr;
     xarray_t objArr;
 } SMakeContext;
@@ -60,6 +61,7 @@ void SMake_ClearContext(SMakeContext *pCtx);
 
 int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath);
 int SMake_ParseProject(SMakeContext *pCtx);
+int SMake_InitProject(SMakeContext *pCtx);
 int SMake_WriteMake(SMakeContext *pCtx);
 
 #ifdef __cplusplus

@@ -4,7 +4,7 @@
 ####################################
 
 CFLAGS = -g -Wall -O2 -I./src
-LIBS = -lpthread
+LIBS =
 NAME = smake
 ODIR = obj
 OBJ = o

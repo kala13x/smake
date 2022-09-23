@@ -53,7 +53,7 @@ void SMake_Usage(const char *pName)
  
     printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>]\n", pName);
     printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>]\n", WhiteSpace(nLength));
-    printf(" %s [-p <name>] [-s <path>] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));
+    printf(" %s [-p <name>] [-s <path>] [-I] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
@@ -65,6 +65,7 @@ void SMake_Usage(const char *pName)
     printf("  -o <path>           # Object output destination\n");
     printf("  -p <name>           # Program or library name\n");
     printf("  -s <path>           # Path to source files\n");
+    printf("  -I                  # Initialize project\n");
     printf("  -d                  # Virtual directory\n");
     printf("  -v                  # Verbosity level\n");
     printf("  -x                  # Create Makefile for CPP\n");
