@@ -3,7 +3,7 @@ SMake is small and simple tool which helps developers to automatically generate 
 
 ### Installation
 Installation is easy because the smake does not use any additional dependencies. It can be installed on any linux / unix platform with a Makefile:
-```
+```bash
 git clone https://github.com/kala13x/smake.git
 cd smake
 make
@@ -12,7 +12,7 @@ sudo make install
 
 ### Usage
 If you want to use smake, just cd to the source directory of your project and write smake. It will automatically scan files at working directory and generate `Makefile`. SMake also has some options to make your steps easier. Options are:
-```
+```bash
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
   -b <path>           # Install destination for binary
@@ -29,7 +29,7 @@ If you want to use smake, just cd to the source directory of your project and wr
   -h                  # Print version and usage
 ```
 For example, if you have project which needs to link `pthread` and `lrt` library and you need to compile it with `-Wall` flag, you must write:
-```
+```bash
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
 
@@ -38,12 +38,12 @@ With option `-p`, you can specify program name for your project, if you will run
 Also if you will specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
 
 This is an example create `Makefile` for static library and specify install location for the library and headers:
-```
+```bash
 smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 ```
 
 The `Makefile` of this project is generated with command:
-```
+```bash
 smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
 ```
 
@@ -52,7 +52,7 @@ smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
 ### Config file
 If you are so lazy and you wont to run smake anytime with arguments, you can write small config file and arguments will be parsed from it. SMake will search config file at current working directory with name `smake.json` or you can specify full path for config file with argument `-c`.
 Config file example:
-```
+```json
 {
     "build": {
         "name": "libxutils.a",
