@@ -160,7 +160,7 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
             for (i = 0; i < nLength; i++)
             {
                 xjson_obj_t *pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
-                if (pValueObj != NULL) SMake_MergeConf(pCtx->sExcept, XJSON_GetString(pValueObj), "|");
+                if (pValueObj != NULL) SMake_MergeConf(pCtx->sExcept, XJSON_GetString(pValueObj), ";");
             }
         }
 
@@ -201,28 +201,19 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
     return 1;
 }
 
-/*
-{
-    "build": {
-        "name": "libxutils.a",
-        "outputDir": "./obj",
-        "flags": "-g -O2 -Wall -D_XUTILS_USE_SSL",
-        "libs": "-lpthread -lssl -lcrypto",
-        "excludes": [
-            "./examples",
-            "./cmake"
-        ]
-    },
-    "install": {
-        "headerDir": "/usr/local/include/xutils",
-        "binaryDir": "/usr/local/lib"
-    }
-}
-*/
-
 static void SMake_WriteExcluded(xjson_obj_t *pArrObj, const char *pExcludes)
 {
+    char sExcludes[SMAKE_LINE_MAX];
+    char *pSavePtr = NULL;
 
+    snprintf(sExcludes, sizeof(sExcludes), pExcludes);
+    char *pTok = strtok_r(sExcludes, ";", &pSavePtr);
+
+    while (pTok != NULL)
+    {
+        XJSON_AddObject(pArrObj, XJSON_NewString(NULL, pTok));
+        pTok = strtok_r(NULL, ";", &pSavePtr);
+    }
 }
 
 int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)

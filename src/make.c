@@ -97,11 +97,11 @@ int SMake_IsExcluded(SMakeContext *pCtx, const char *pPath)
     char sExcluded[SMAKE_LINE_MAX];
     xstrncpy(sExcluded, sizeof(sExcluded), pCtx->sExcept);
 
-    char *pExclude = strtok(sExcluded, "|");
+    char *pExclude = strtok(sExcluded, ";");
     while(pExclude != NULL)
     {
         if (!strcmp(pExclude, pPath)) return 1;
-        pExclude = strtok(NULL, "|");
+        pExclude = strtok(NULL, ";");
     }
 
     return 0;
