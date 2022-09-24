@@ -43,21 +43,30 @@ SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
 
 void SMake_InitContext(SMakeContext *pCtx) 
 {
-    if(XArray_Init(&pCtx->fileArr, 3, 0) == NULL)
+    if (XArray_Init(&pCtx->fileArr, 4, 0) == NULL)
     {
         sloge("Can not initialize file array");
         exit(EXIT_FAILURE);
     }
 
-    if(XArray_Init(&pCtx->objArr, 3, 0) == NULL)
+    if (XArray_Init(&pCtx->hdrArr, 4, 0) == NULL)
+    {
+        sloge("Can not initialize header array");
+        XArray_Destroy(&pCtx->fileArr);
+        exit(EXIT_FAILURE);
+    }
+
+    if (XArray_Init(&pCtx->objArr, 4, 0) == NULL)
     {
         sloge("Can not initialize object array");
         XArray_Destroy(&pCtx->fileArr);
+        XArray_Destroy(&pCtx->hdrArr);
         exit(EXIT_FAILURE);
     }
 
     pCtx->fileArr.clearCb = SMake_ClearCallback;
     pCtx->objArr.clearCb = SMake_ClearCallback;
+    pCtx->hdrArr.clearCb = SMake_ClearCallback;
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
     pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
@@ -81,6 +90,7 @@ void SMake_ClearContext(SMakeContext *pCtx)
 {
     XArray_Destroy(&pCtx->fileArr);
     XArray_Destroy(&pCtx->objArr);
+    XArray_Destroy(&pCtx->hdrArr);
 }
 
 int SMake_GetFileType(const char *pPath, int nLen)
@@ -154,7 +164,7 @@ int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
     return XArray_GetUsedSize(&pCtx->fileArr);
 }
 
-int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
+static int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
 {
     XFile srcFile;
 	char sLine[SMAKE_LINE_MAX];
@@ -198,9 +208,21 @@ int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
     return 0;
 }
 
+static void SMake_ProcessHeader(SMakeContext *pCtx, SMakeFile *pFile)
+{
+    size_t i, nCount = XArray_GetUsedSize(&pCtx->hdrArr);
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pPath = (const char*)XArray_GetData(&pCtx->hdrArr, i);
+        if (pPath != NULL && !strcmp(pPath, pFile->sPath)) return;
+    }
+
+    XArray_AddData(&pCtx->hdrArr, pFile->sPath, strlen(pFile->sPath) + 1);
+}
+
 int SMake_ParseProject(SMakeContext *pCtx)
 {
-    int i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
+    size_t i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
     for (i = 0; i < nFiles; i++)
     {
         SMakeFile *pFile = (SMakeFile*)XArray_GetData(&pCtx->fileArr, i);
@@ -222,6 +244,9 @@ int SMake_ParseProject(SMakeContext *pCtx)
                     strcat(pCtx->sFlags, " -I");
                     strcat(pCtx->sFlags, pFile->sPath);
                 }
+
+                SMake_ProcessHeader(pCtx, pFile);
+                continue;
             }
 
             if (!nLastBytes)
@@ -393,9 +418,9 @@ int SMake_WriteMake(SMakeContext *pCtx)
     if (nIncludes) fprintf(pFile, "INSTALL_INC = %s\n", pCtx->sIncludes);
     if (nBinary) fprintf(pFile, "INSTALL_BIN = %s\n", pCtx->sBinary);
 
-    if (pCtx->sVPath[nVPathLen-1] == ':') pCtx->sVPath[nVPathLen-1] = '\0';
+    if (nVPathLen && pCtx->sVPath[nVPathLen-1] == ':') pCtx->sVPath[--nVPathLen] = '\0';
     if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, pCtx->sVPath);
-    else if (strlen(pCtx->sVPath)) fprintf(pFile, "VPATH = %s\n", pCtx->sVPath);
+    else if (nVPathLen) fprintf(pFile, "VPATH = %s\n", pCtx->sVPath);
 
     fprintf(pFile, "\n.%s.$(OBJ):\n", pCtx->nCPP ? "cpp" : "c");
     fprintf(pFile, "\t@test -d $(ODIR) || mkdir -p $(ODIR)\n");
@@ -417,19 +442,13 @@ int SMake_WriteMake(SMakeContext *pCtx)
             fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
         }
 
-        if (nIncludes && (strlen(pCtx->sPath) || strlen(pCtx->sVPath)))
+        if (nIncludes) fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
+        size_t nCount = XArray_GetUsedSize(&pCtx->hdrArr);
+
+        for (i = 0; i < nCount; i++)
         {
-            fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
-            fprintf(pFile, "\t@cp -r %s/*.h $(INSTALL_INC)/\n", pCtx->sPath);
-
-            char *pSavePtr = NULL;
-            char *ptr = strtok_r(pCtx->sVPath, ":", &pSavePtr);
-
-            while (ptr != NULL)
-            {
-                fprintf(pFile, "\t@cp -r %s/*.h $(INSTALL_INC)/\n", ptr);
-                ptr = strtok_r(NULL, ":", &pSavePtr);
-            }
+            const char *pPath = (const char*)XArray_GetData(&pCtx->hdrArr, i);
+            if (pPath != NULL) fprintf(pFile, "\t@cp -r %s/*.h $(INSTALL_INC)/\n", pPath);
         }
     }
 

@@ -53,6 +53,7 @@ typedef struct {
     uint8_t nCPP;
     uint8_t nInit;
     xarray_t fileArr;
+    xarray_t hdrArr;
     xarray_t objArr;
 } SMakeContext;
 
