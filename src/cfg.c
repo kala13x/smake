@@ -37,7 +37,7 @@ int SMake_GetLogFlags(uint8_t nVerbose)
 int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
 {
     int nChar = 0;
-    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:I1:d1:x1:h1")) != -1)
+    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:I1:d1:w1:x1:h1")) != -1)
     {
         switch (nChar)
         {
@@ -75,6 +75,9 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 break;
             case 'v':
                 pCtx->nVerbose = atoi(optarg);
+                break;
+            case 'w':
+                pCtx->nOverwrite = 1;
                 break;
             case 'd':
                 pCtx->nVPath = 1;

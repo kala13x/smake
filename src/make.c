@@ -80,6 +80,7 @@ void SMake_InitContext(SMakeContext *pCtx)
     pCtx->sName[0] = XSTRNULL;
     pCtx->sMain[0] = XSTRNULL;
     pCtx->sLibs[0] = XSTRNULL;
+    pCtx->nOverwrite = 0;
     pCtx->nVerbose = 0;
     pCtx->nVPath = 0;
     pCtx->nInit = 0;
@@ -356,7 +357,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     if (pCtx->nVPath) snprintf(sMakefile, sizeof(sMakefile), "Makefile");
     else snprintf(sMakefile, sizeof(sMakefile), "%s/Makefile", pCtx->sPath);
 
-    if (XPath_Exists(sMakefile))
+    if (XPath_Exists(sMakefile) && !pCtx->nOverwrite)
     {
         slogw("The Makefile already exists.");
         slogc(SLOG_WARN, 0, "Would you like to owerwrite? (Y/N): ");

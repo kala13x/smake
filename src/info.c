@@ -53,7 +53,7 @@ void SMake_Usage(const char *pName)
  
     printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>]\n", pName);
     printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>]\n", WhiteSpace(nLength));
-    printf(" %s [-p <name>] [-s <path>] [-I] [-d] [-v] [-x] [-h]\n", WhiteSpace(nLength));
+    printf(" %s [-p <name>] [-s <path>] [-I] [-d] [-v] [-w] [-x] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
@@ -68,6 +68,7 @@ void SMake_Usage(const char *pName)
     printf("  -I                  # Initialize project\n");
     printf("  -d                  # Virtual directory\n");
     printf("  -v                  # Verbosity level\n");
+    printf("  -w                  # Force overwrite output\n");
     printf("  -x                  # Create Makefile for CPP\n");
     printf("  -h                  # Print version and usage\n\n");
     printf("Hints:\n1) You can exclude multiple files and directories with \";\" tokenizer\n");

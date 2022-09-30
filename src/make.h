@@ -48,6 +48,7 @@ typedef struct {
     char sPath[SMAKE_PATH_MAX];
     char sName[SMAKE_NAME_MAX];
     char sMain[SMAKE_NAME_MAX];
+    uint8_t nOverwrite;
     uint8_t nVerbose;
     uint8_t nVPath;
     uint8_t nCPP;
