@@ -185,6 +185,9 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
         pValueObj = XJSON_GetObject(pBuildObj, "verbose");
         if (pValueObj != NULL && !pCtx->nVerbose) pCtx->nVerbose = XJSON_GetInt(pValueObj);
 
+        pValueObj = XJSON_GetObject(pBuildObj, "overwrite");
+        if (pValueObj != NULL) pCtx->nOverwrite = XJSON_GetBool(pValueObj);
+
         pValueObj = XJSON_GetObject(pBuildObj, "cxx");
         if (pValueObj != NULL) pCtx->nCPP = XJSON_GetBool(pValueObj);
     }
@@ -244,6 +247,7 @@ int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
             }
 
             XJSON_AddObject(pBuildObj, XJSON_NewInt("verbose", pCtx->nVerbose));
+            XJSON_AddObject(pBuildObj, XJSON_NewBool("overwrite", pCtx->nOverwrite));
             XJSON_AddObject(pBuildObj, XJSON_NewBool("cxx", pCtx->nCPP));
             XJSON_AddObject(pRootObj, pBuildObj);
         }
