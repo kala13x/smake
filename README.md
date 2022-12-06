@@ -1,5 +1,5 @@
 ## Simple-Make
-`SMake` is small and simple tool which helps developers to automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory. See the file src/info.h to check out what release version you have.
+`SMake` is small and simple tool which helps developers to automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory. See the file `src/info.h` to check out what release version you have.
 
 ### Installation
 `SMake` doesn't use any additional dependencies, so you can easily install it on any `Linux` / `Unix` distribution using an included `Makefile`.
