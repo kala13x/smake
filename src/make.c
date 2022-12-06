@@ -428,8 +428,10 @@ int SMake_WriteMake(SMakeContext *pCtx)
 
         if (nObjs < 2) { fprintf(pFile, "%s\n", pObj->sName); break; }
         if (!i) { fprintf(pFile, "%s \\\n", pObj->sName); continue; }
+
         if (i == (nObjs - 1)) fprintf(pFile, "\t%s\n\n", pObj->sName);
         else fprintf(pFile, "\t%s \\\n", pObj->sName);
+        slogd("Added object to recept: %s", pObj->sName);
     }
 
     int nBinary = strlen(pCtx->sBinary) ? 1 : 0;
