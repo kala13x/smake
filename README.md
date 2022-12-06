@@ -1,8 +1,8 @@
 ## Simple-Make - Version 1.0 build 29
-SMake is small and simple tool which helps developers to automatically generate Makefiles for C/C++ projects.
+`SMake` is small and simple tool which helps developers to automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory.
 
 ### Installation
-Installation is easy because the smake does not use any additional dependencies. It can be installed on any linux / unix platform with a Makefile:
+`SMake` doesn't use any additional dependencies, so you can easily install it on any `Linux` / `Unix` distribution using an included `Makefile`.
 ```bash
 git clone https://github.com/kala13x/smake.git
 cd smake
@@ -11,7 +11,7 @@ sudo make install
 ```
 
 ### Usage
-If you want to use smake, just cd to the source directory of your project and write smake. It will automatically scan files at working directory and generate `Makefile`. SMake also has some options to make your steps easier. Options are:
+To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you. `SMake` also has some options to make your steps easier. Options are:
 ```bash
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
@@ -28,7 +28,7 @@ If you want to use smake, just cd to the source directory of your project and wr
   -x                  # Use CPP compiler
   -h                  # Print version and usage
 ```
-For example, if you have project which needs to link `pthread` and `lrt` library and you need to compile it with `-Wall` flag, you must write:
+For example, If your project requires 'lrt' and 'lpthread' linking and you need to compile it with `-Wall` flag, the command will be something like this:
 ```bash
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
