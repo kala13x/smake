@@ -1,0 +1,11 @@
+{
+    "build": {
+        "name": "smake",
+        "outputDir": "./obj",
+        "flags": "-g -O2 -Wall",
+        "overwrite": true
+    },
+    "install": {
+        "binaryDir": "/usr/bin"
+    }
+}

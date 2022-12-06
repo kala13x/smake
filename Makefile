@@ -3,20 +3,20 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -g -Wall -O2 -I./src
-LIBS =
+CFLAGS = -g -O2 -Wall -I./src
+LIBS = 
 NAME = smake
-ODIR = obj
+ODIR = ./obj
 OBJ = o
 
-OBJS = xstr.$(OBJ) \
+OBJS = cfg.$(OBJ) \
 	file.$(OBJ) \
-	smake.$(OBJ) \
 	info.$(OBJ) \
 	make.$(OBJ) \
 	slog.$(OBJ) \
-	cfg.$(OBJ) \
-	xjson.$(OBJ)
+	smake.$(OBJ) \
+	xjson.$(OBJ) \
+	xstr.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
 INSTALL_BIN = /usr/bin

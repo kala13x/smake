@@ -283,6 +283,47 @@ xarray_data_t* XArray_Remove(xarray_t *pArr, size_t nIndex)
     return pData;
 }
 
+void XArray_Swap(xarray_t *pArr, size_t nIndex1, size_t nIndex2)
+{
+    if (nIndex1 >= pArr->nUsed ||
+        nIndex2 >= pArr->nUsed) return;
+
+    xarray_data_t *pData1 = pArr->pData[nIndex1];
+    pArr->pData[nIndex1] = pArr->pData[nIndex2];
+    pArr->pData[nIndex2] = pData1;
+}
+
+int XArray_Partitioning(xarray_t *pArr, xarray_comparator_t compare, void *pCtx, int nStart, int nFinish)
+{
+    int nPivot = nStart;
+    while(1)
+    {
+        while (compare((void*)pArr->pData[nStart], (void*)pArr->pData[nPivot], pCtx) < 0) nStart++;
+        while (compare((void*)pArr->pData[nFinish], (void*)pArr->pData[nPivot], pCtx) > 0) nFinish--;
+        if (!compare((void*)pArr->pData[nStart], (void*)pArr->pData[nFinish], pCtx)) nFinish--;
+        if (nStart >= nFinish) return nStart;
+        XArray_Swap(pArr, nStart, nFinish);
+    }
+
+    return nStart;
+}
+
+void XArray_QuickSort(xarray_t *pArr, xarray_comparator_t compare, void *pCtx, int nStart, int nFinish)
+{
+    if (nStart < nFinish)
+    {
+        int nPartitioning = XArray_Partitioning(pArr, compare, pCtx, nStart, nFinish);
+        XArray_QuickSort(pArr, compare, pCtx, nStart, nPartitioning);
+        XArray_QuickSort(pArr, compare, pCtx, nPartitioning+1, nFinish);
+    }
+}
+
+void XArray_Sort(xarray_t *pArr, xarray_comparator_t compare, void *pCtx)
+{
+    if (pArr == NULL || !pArr->nUsed) return;
+    XArray_QuickSort(pArr, compare, pCtx, 0, (int)pArr->nUsed-1);
+}
+
 size_t XArray_GetUsedSize(xarray_t *pArr)
 {
     if (pArr == NULL) return 0;

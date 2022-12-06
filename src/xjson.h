@@ -55,6 +55,7 @@ typedef struct xarray_data_ {
     void* pData;
 } xarray_data_t;
 
+typedef int(*xarray_comparator_t)(const void*, const void*, void*);
 typedef void(*xarray_clear_cb_t)(xarray_data_t *pArrData);
 
 typedef struct xarray_ {
@@ -84,6 +85,11 @@ int XArray_Add(xarray_t *pArr, xarray_data_t *pNewData);
 int XArray_AddData(xarray_t *pArr, void *pData, size_t nSize);
 void* XArray_GetData(xarray_t *pArr, size_t nIndex);
 size_t XArray_GetSize(xarray_t *pArr, size_t nIndex);
+
+int XArray_Partitioning(xarray_t *pArr, xarray_comparator_t compare, void *pCtx, int nStart, int nFinish);
+void XArray_QuickSort(xarray_t *pArr, xarray_comparator_t compare, void *pCtx, int nStart, int nFinish);
+void XArray_Sort(xarray_t *pArr, xarray_comparator_t compare, void *pCtx);
+void XArray_Swap(xarray_t *pArr, size_t nIndex1, size_t nIndex2);
 
 size_t XArray_GetUsedSize(xarray_t *pArr);
 size_t XArray_GetArraySize(xarray_t *pArr);
