@@ -11,7 +11,9 @@ sudo make install
 ```
 
 ### Usage
-To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you. `SMake` also has some options to make your steps easier. Options are:
+To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you. 
+
+`SMake` also has some options to make your steps easier:
 ```bash
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
@@ -33,11 +35,11 @@ For example, If your project requires 'lrt' and 'lpthread' linking and you need 
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
 
-With option `-p`, you can specify program name for your project, if you will run smake without this argument, smake will scan your files to search main function and your program name will be that filename where `main()` is located.
+With option `-p`, you can specify program name for your project, if you run smake without this argument, smake will scan your files to search main function and your program name will be that filename where `main()` is located.
 
-Also if you will specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
+Also if you specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
 
-This is an example create `Makefile` for static library and specify install location for the library and headers:
+This is an example to generate `Makefile` for static library and specify install location for the library and headers:
 ```bash
 smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 ```
@@ -50,8 +52,9 @@ smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
 ![alt tag](https://github.com/kala13x/smake/blob/master/smake.png)
 
 ### Config file
-If you are so lazy and you wont to run smake anytime with arguments, you can write small config file and arguments will be parsed from it. SMake will search config file at current working directory with name `smake.json` or you can specify full path for config file with argument `-c`.
-Config file example:
+Anything that can be passed as arguments can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
+
+This example includes all supported parameters and all of them are optional:
 ```json
 {
     "build": {
@@ -59,6 +62,10 @@ Config file example:
         "outputDir": "./obj",
         "flags": "-g -O2 -Wall -D_XSOCK_USE_SSL",
         "libs": "-lpthread -lssl -lcrypto",
+        "compiler": "gcc",
+        "overwrite": true,
+        "verbose": 2,
+        "cxx": false,
         "excludes": [
             "./examples"
         ]
