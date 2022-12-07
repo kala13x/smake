@@ -46,7 +46,7 @@ smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 
 The `Makefile` of this project is generated with command:
 ```bash
-smake -b /usr/bin -o obj -f '-g -Wall -O2' -l '-lpthread'
+smake -b /usr/bin -o obj -f '-g -O2 -Wall'
 ```
 
 ![alt tag](https://github.com/kala13x/smake/blob/master/smake.png)
