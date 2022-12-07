@@ -48,8 +48,9 @@ The `Makefile` of this project is generated with command:
 ```bash
 smake -b /usr/bin -o obj -f '-g -O2 -Wall'
 ```
-
-![alt tag](https://github.com/kala13x/smake/blob/master/smake.png)
+<p align="center">
+    <img src="https://github.com/kala13x/smake/blob/master/smake.png" alt="alternate text">
+</p>
 
 ### Config file
 Anything that can be passed as arguments can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
