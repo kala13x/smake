@@ -30,7 +30,7 @@ To use the `Makefile` generator you need to go into your project directory and t
   -x                  # Use CPP compiler
   -h                  # Print version and usage
 ```
-For example, If your project requires 'lrt' and 'lpthread' linking and you need to compile it with `-Wall` flag, the command will be something like this:
+For example, if your project requires `lrt` and `lpthread` linking and you need to compile it with `-Wall` flag, the command will be following:
 ```bash
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
