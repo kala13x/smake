@@ -53,7 +53,7 @@ smake -b /usr/bin -o obj -f '-g -O2 -Wall'
 </p>
 
 ### Config file
-Anything that can be passed as arguments can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
+Anything that can be passed as argument can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
 
 This example includes all supported parameters and all of them are optional:
 ```json
