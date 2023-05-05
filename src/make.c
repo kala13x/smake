@@ -46,12 +46,14 @@ void SMake_InitContext(SMakeContext *pCtx)
     XArray_Init(&pCtx->fileArr, 2, 0);
     XArray_Init(&pCtx->hdrArr, 2, 0);
     XArray_Init(&pCtx->objArr, 2, 0);
+    XArray_Init(&pCtx->incArr, 2, 0);
     XArray_Init(&pCtx->vPaths, 2, 0);
 
     pCtx->fileArr.clearCb = SMake_ClearCallback;
     pCtx->objArr.clearCb = SMake_ClearCallback;
     pCtx->hdrArr.clearCb = SMake_ClearCallback;
     pCtx->vPaths.clearCb = SMake_ClearCallback;
+    pCtx->incArr.clearCb = SMake_ClearCallback;
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
     pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
@@ -76,6 +78,7 @@ void SMake_ClearContext(SMakeContext *pCtx)
     XArray_Destroy(&pCtx->fileArr);
     XArray_Destroy(&pCtx->objArr);
     XArray_Destroy(&pCtx->hdrArr);
+    XArray_Destroy(&pCtx->incArr);
     XArray_Destroy(&pCtx->vPaths);
 }
 
@@ -239,6 +242,37 @@ static uint8_t SMake_GetVPath(SMakeContext *pCtx, char *pPath, size_t nSize)
     return nStarted;
 }
 
+static void SMake_ProcessIncludes(SMakeContext *pCtx, char *pPath)
+{
+    size_t i, nCount = XArray_GetUsedSize(&pCtx->incArr);
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pIncPath = (const char*)XArray_GetData(&pCtx->incArr, i);
+        if (pIncPath != NULL && !strcmp(pIncPath, pPath)) return;
+    }
+
+    XArray_AddData(&pCtx->incArr, pPath, strlen(pPath) + 1);
+}
+
+static uint8_t SMake_GetIncludes(SMakeContext *pCtx, char *pPath, size_t nSize)
+{
+    size_t nCount = XArray_GetUsedSize(&pCtx->incArr);
+    size_t i, nAvail = nSize;
+    uint8_t nStarted = 0;
+
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pIncPath = (const char*)XArray_GetData(&pCtx->incArr, i);
+        if (pIncPath == NULL) continue;
+
+        if (!nStarted)  nStarted = 1;
+        else nAvail = xstrncatf(pPath, nAvail, " ");
+        nAvail = xstrncatf(pPath, nAvail, "-I%s", pIncPath);
+    }
+
+    return nStarted;
+}
+
 int SMake_ParseProject(SMakeContext *pCtx)
 {
     size_t i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
@@ -258,12 +292,7 @@ int SMake_ParseProject(SMakeContext *pCtx)
             else if (pFile->nType == SMAKE_FILE_H || 
                      pFile->nType == SMAKE_FILE_HPP)
             {
-                if (strstr(pCtx->sFlags, pFile->sPath) == NULL)
-                {
-                    strcat(pCtx->sFlags, " -I");
-                    strcat(pCtx->sFlags, pFile->sPath);
-                }
-
+                SMake_ProcessIncludes(pCtx, pFile->sPath);
                 SMake_ProcessHeader(pCtx, pFile);
                 continue;
             }
@@ -421,6 +450,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     const char *pCompiler = pCtx->nCPP ? "CXX" : "CC";
     const char *pLinker = pCtx->nCPP ? "CXXFLAGS" : "CFLAGS";
 
+    char sIncludes[SMAKE_LINE_MAX];
     int nStatic, nShared;
     nStatic = nShared = 0;
 
@@ -429,7 +459,11 @@ int SMake_WriteMake(SMakeContext *pCtx)
     if (strstr(pCtx->sName, ".a") != NULL) nStatic = 1;
     if (strstr(pCtx->sName, ".so") != NULL) nShared = 1;
 
+    XArray_Sort(&pCtx->incArr, SMake_CompareLen, NULL);
+    SMake_GetIncludes(pCtx, sIncludes, sizeof(sIncludes));
+
     fprintf(pFile, "%s = %s\n", pLinker, pCtx->sFlags);
+    fprintf(pFile, "%s += %s\n", pLinker, sIncludes);
     fprintf(pFile, "LIBS = %s\n", pCtx->sLibs);
     fprintf(pFile, "NAME = %s\n", pCtx->sName);
     fprintf(pFile, "ODIR = %s\n", pCtx->sOutDir);
@@ -437,6 +471,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     fprintf(pFile, "OBJS = ");
 
     slogi("Compiler flags: %s", pCtx->sFlags);
+    slogi("Include flags: %s", sIncludes);
     slogi("Linked libraries: %s", pCtx->sLibs);
     slogi("Binary file name: %s", pCtx->sName);
     slogi("Output Directory: %s", pCtx->sOutDir);
