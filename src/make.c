@@ -43,30 +43,15 @@ SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
 
 void SMake_InitContext(SMakeContext *pCtx) 
 {
-    if (XArray_Init(&pCtx->fileArr, 4, 0) == NULL)
-    {
-        sloge("Can not initialize file array");
-        exit(EXIT_FAILURE);
-    }
-
-    if (XArray_Init(&pCtx->hdrArr, 4, 0) == NULL)
-    {
-        sloge("Can not initialize header array");
-        XArray_Destroy(&pCtx->fileArr);
-        exit(EXIT_FAILURE);
-    }
-
-    if (XArray_Init(&pCtx->objArr, 4, 0) == NULL)
-    {
-        sloge("Can not initialize object array");
-        XArray_Destroy(&pCtx->fileArr);
-        XArray_Destroy(&pCtx->hdrArr);
-        exit(EXIT_FAILURE);
-    }
+    XArray_Init(&pCtx->fileArr, 2, 0);
+    XArray_Init(&pCtx->hdrArr, 2, 0);
+    XArray_Init(&pCtx->objArr, 2, 0);
+    XArray_Init(&pCtx->vPaths, 2, 0);
 
     pCtx->fileArr.clearCb = SMake_ClearCallback;
     pCtx->objArr.clearCb = SMake_ClearCallback;
     pCtx->hdrArr.clearCb = SMake_ClearCallback;
+    pCtx->vPaths.clearCb = SMake_ClearCallback;
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
     pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
@@ -76,7 +61,6 @@ void SMake_InitContext(SMakeContext *pCtx)
     pCtx->sConfig[0] = XSTRNULL;
     pCtx->sBinary[0] = XSTRNULL;
     pCtx->sFlags[0] = XSTRNULL;
-    pCtx->sVPath[0] = XSTRNULL;
     pCtx->sName[0] = XSTRNULL;
     pCtx->sMain[0] = XSTRNULL;
     pCtx->sLibs[0] = XSTRNULL;
@@ -92,6 +76,7 @@ void SMake_ClearContext(SMakeContext *pCtx)
     XArray_Destroy(&pCtx->fileArr);
     XArray_Destroy(&pCtx->objArr);
     XArray_Destroy(&pCtx->hdrArr);
+    XArray_Destroy(&pCtx->vPaths);
 }
 
 int SMake_GetFileType(const char *pPath, int nLen)
@@ -221,6 +206,39 @@ static void SMake_ProcessHeader(SMakeContext *pCtx, SMakeFile *pFile)
     XArray_AddData(&pCtx->hdrArr, pFile->sPath, strlen(pFile->sPath) + 1);
 }
 
+static void SMake_ProcessPath(SMakeContext *pCtx, char *pPath)
+{
+    if (!strncmp(pCtx->sPath, pPath, strlen(pPath))) return;
+    size_t i, nCount = XArray_GetUsedSize(&pCtx->vPaths);
+
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pVPath = (const char*)XArray_GetData(&pCtx->vPaths, i);
+        if (pVPath != NULL && !strcmp(pVPath, pPath)) return;
+    }
+
+    XArray_AddData(&pCtx->vPaths, pPath, strlen(pPath) + 1);
+}
+
+static uint8_t SMake_GetVPath(SMakeContext *pCtx, char *pPath, size_t nSize)
+{
+    size_t nCount = XArray_GetUsedSize(&pCtx->vPaths);
+    size_t i, nAvail = nSize;
+    uint8_t nStarted = 0;
+
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pVPath = (const char*)XArray_GetData(&pCtx->vPaths, i);
+        if (pVPath == NULL) continue;
+
+        if (!nStarted)  nStarted = 1;
+        else nAvail = xstrncatf(pPath, nAvail, ":");
+        nAvail = xstrncatf(pPath, nAvail, "%s", pVPath);
+    }
+
+    return nStarted;
+}
+
 int SMake_ParseProject(SMakeContext *pCtx)
 {
     size_t i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
@@ -269,14 +287,9 @@ int SMake_ParseProject(SMakeContext *pCtx)
             SMakeFile *pObj = SMake_FileNew(pFile->sPath, sName, SMAKE_FILE_OBJ);
             if (pObj != NULL)
             {
-                if (strstr(pCtx->sPath, pObj->sPath) == NULL &&
-                    strstr(pCtx->sVPath, pObj->sPath) == NULL)
-                {
-                    nLeftBytes = sizeof(pCtx->sVPath) - strlen(pCtx->sVPath);
-                    xstrncatf(pCtx->sVPath, nLeftBytes, "%s:", pObj->sPath);
-                }
-
+                SMake_ProcessPath(pCtx, pObj->sPath);
                 XArray_AddData(&pCtx->objArr, pObj, 0);
+
                 slogd("Loaded compile object: %s/%s", pObj->sPath, sName);
             }
         }
@@ -318,7 +331,7 @@ int SMake_InitProject(SMakeContext *pCtx)
     }
 
     char sSourceFile[SMAKE_PATH_MAX + SMAKE_NAME_MAX + 8];
-    snprintf(sSourceFile, sizeof(sSourceFile), "%s/%s.%s",
+    xstrncpyf(sSourceFile, sizeof(sSourceFile), "%s/%s.%s",
         pCtx->sPath, pCtx->sName, pCtx->nCPP ? "cpp":"c");
 
     if (!XPath_Exists(sSourceFile))
@@ -360,6 +373,17 @@ int SMake_CompareName(const void *pData1, const void *pData2, void *pCtx)
     SMakeFile *pObj2 = (SMakeFile*)pSecond->pData;
 
     return strcmp(pObj1->sName, pObj2->sName);
+}
+
+int SMake_CompareLen(const void *pData1, const void *pData2, void *pCtx)
+{
+    xarray_data_t *pFirst = (xarray_data_t*)pData1;
+    xarray_data_t *pSecond = (xarray_data_t*)pData2;
+
+    const char *pStr1 = (const char*)pFirst->pData;
+    const char *pStr2 = (const char*)pSecond->pData;
+
+    return strlen(pStr1) > strlen(pStr2);
 }
 
 int SMake_WriteMake(SMakeContext *pCtx)
@@ -434,17 +458,20 @@ int SMake_WriteMake(SMakeContext *pCtx)
         slogd("Added object to recept: %s", pObj->sName);
     }
 
+    char sVPath[SMAKE_PATH_MAX];
+    XArray_Sort(&pCtx->vPaths, SMake_CompareLen, NULL);
+    SMake_GetVPath(pCtx, sVPath, sizeof(sVPath));
+
     int nBinary = strlen(pCtx->sBinary) ? 1 : 0;
     int nIncludes = strlen(pCtx->sIncludes) ? 1 : 0;
-    int nVPathLen = strlen(pCtx->sVPath);
+    int nVPathLen = strlen(sVPath);
 
     fprintf(pFile, "OBJECTS = $(patsubst %%,$(ODIR)/%%,$(OBJS))\n");
     if (nIncludes) fprintf(pFile, "INSTALL_INC = %s\n", pCtx->sIncludes);
     if (nBinary) fprintf(pFile, "INSTALL_BIN = %s\n", pCtx->sBinary);
 
-    if (nVPathLen && pCtx->sVPath[nVPathLen-1] == ':') pCtx->sVPath[--nVPathLen] = '\0';
-    if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, pCtx->sVPath);
-    else if (nVPathLen) fprintf(pFile, "VPATH = %s\n", pCtx->sVPath);
+    if (pCtx->nVPath) fprintf(pFile, "VPATH = %s:%s\n", pCtx->sPath, sVPath);
+    else if (nVPathLen) fprintf(pFile, "VPATH = %s\n", sVPath);
 
     fprintf(pFile, "\n.%s.$(OBJ):\n", pCtx->nCPP ? "cpp" : "c");
     fprintf(pFile, "\t@test -d $(ODIR) || mkdir -p $(ODIR)\n");

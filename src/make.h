@@ -43,7 +43,6 @@ typedef struct {
     char sConfig[SMAKE_PATH_MAX];
     char sBinary[SMAKE_PATH_MAX];
     char sFlags[SMAKE_LINE_MAX];
-    char sVPath[SMAKE_PATH_MAX];
     char sLibs[SMAKE_LINE_MAX];
     char sPath[SMAKE_PATH_MAX];
     char sName[SMAKE_NAME_MAX];
@@ -56,6 +55,7 @@ typedef struct {
     xarray_t fileArr;
     xarray_t hdrArr;
     xarray_t objArr;
+    xarray_t vPaths;
 } SMakeContext;
 
 void SMake_InitContext(SMakeContext *pCtx);

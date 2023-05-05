@@ -188,6 +188,9 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
         pValueObj = XJSON_GetObject(pBuildObj, "overwrite");
         if (pValueObj != NULL) pCtx->nOverwrite = XJSON_GetBool(pValueObj);
 
+        pValueObj = XJSON_GetObject(pBuildObj, "vpath");
+        if (pValueObj != NULL) pCtx->nVPath = XJSON_GetBool(pValueObj);
+
         pValueObj = XJSON_GetObject(pBuildObj, "cxx");
         if (pValueObj != NULL) pCtx->nCPP = XJSON_GetBool(pValueObj);
     }
