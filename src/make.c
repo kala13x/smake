@@ -451,6 +451,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
     const char *pLinker = pCtx->nCPP ? "CXXFLAGS" : "CFLAGS";
 
     char sIncludes[SMAKE_LINE_MAX];
+    sIncludes[0] = XSTRNULL;
+
     int nStatic, nShared;
     nStatic = nShared = 0;
 
@@ -494,6 +496,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
     }
 
     char sVPath[SMAKE_PATH_MAX];
+    sVPath[0] = XSTRNULL;
+
     XArray_Sort(&pCtx->vPaths, SMake_CompareLen, NULL);
     SMake_GetVPath(pCtx, sVPath, sizeof(sVPath));
 
