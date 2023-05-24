@@ -3,8 +3,9 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -g -O2 -Wall -I./src
-LIBS = 
+CFLAGS = -g -O2 -Wall
+CFLAGS += -I./src
+LIBS = -lpthread
 NAME = smake
 ODIR = ./obj
 OBJ = o

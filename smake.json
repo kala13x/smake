@@ -3,6 +3,7 @@
         "name": "smake",
         "outputDir": "./obj",
         "flags": "-g -O2 -Wall",
+        "libs": "-lpthread",
         "overwrite": true
     },
     "install": {
