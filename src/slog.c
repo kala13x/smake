@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <time.h>
 #include "slog.h"
+#include "xstr.h"
 
 #if !defined(__APPLE__) && !defined(DARWIN) && !defined(WIN32)
 #include <syscall.h>
@@ -208,18 +209,18 @@ static void slog_create_tag(char *pOut, size_t nSize, slog_flag_t eFlag, const c
 
     if (pTag == NULL)
     {
-        snprintf(pOut, nSize, pIndent);
+        xstrncpyf(pOut, nSize, pIndent);
         return;
     }
 
-    if (pCfg->eColorFormat != SLOG_COLORING_TAG) snprintf(pOut, nSize, "<%s>%s", pTag, pIndent);
-    else snprintf(pOut, nSize, "%s<%s>%s%s", pColor, pTag, SLOG_COLOR_RESET, pIndent);
+    if (pCfg->eColorFormat != SLOG_COLORING_TAG) xstrncpyf(pOut, nSize, "<%s>%s", pTag, pIndent);
+    else xstrncpyf(pOut, nSize, "%s<%s>%s%s", pColor, pTag, SLOG_COLOR_RESET, pIndent);
 }
 
 static void slog_create_tid(char *pOut, int nSize, uint8_t nTraceTid)
 {
     if (!nTraceTid) pOut[0] = SLOG_NUL;
-    else snprintf(pOut, nSize, "(%u) ", slog_get_tid());
+    else xstrncpyf(pOut, nSize, "(%u) ", slog_get_tid());
 }
 
 static void slog_display_message(const slog_context_t *pCtx, const char *pInfo, int nInfoLen, const char *pInput)
@@ -255,7 +256,7 @@ static void slog_display_message(const slog_context_t *pCtx, const char *pInfo, 
     const slog_date_t *pDate = &pCtx->date;
 
     char sFilePath[SLOG_PATH_MAX + SLOG_NAME_MAX + SLOG_DATE_MAX];
-    snprintf(sFilePath, sizeof(sFilePath), "%s/%s-%04d-%02d-%02d.log", 
+    xstrncpyf(sFilePath, sizeof(sFilePath), "%s/%s-%04d-%02d-%02d.log", 
         pCfg->sFilePath, pCfg->sFileName, pDate->nYear, pDate->nMonth, pDate->nDay);
 
     FILE *pFile = fopen(sFilePath, "a");
@@ -275,12 +276,12 @@ static int slog_create_info(const slog_context_t *pCtx, char* pOut, size_t nSize
 
     if (pCfg->eDateControl == SLOG_TIME_ONLY)
     {
-        snprintf(sDate, sizeof(sDate), "%02d:%02d:%02d.%03d ",
+        xstrncpyf(sDate, sizeof(sDate), "%02d:%02d:%02d.%03d ",
             pDate->nHour,pDate->nMin, pDate->nSec, pDate->nUsec);
     }
     else if (pCfg->eDateControl == SLOG_DATE_FULL)
     {
-        snprintf(sDate, sizeof(sDate), "%04d.%02d.%02d-%02d:%02d:%02d.%03d ",
+        xstrncpyf(sDate, sizeof(sDate), "%04d.%02d.%02d-%02d:%02d:%02d.%03d ",
             pDate->nYear, pDate->nMonth, pDate->nDay, pDate->nHour,
             pDate->nMin, pDate->nSec, pDate->nUsec);
     }
@@ -291,7 +292,7 @@ static int slog_create_info(const slog_context_t *pCtx, char* pOut, size_t nSize
 
     slog_create_tid(sTid, sizeof(sTid), pCfg->nTraceTid);
     slog_create_tag(sTag, sizeof(sTag), pCtx->eFlag, pColorCode);
-    return snprintf(pOut, nSize, "%s%s%s%s", pColor, sTid, sDate, sTag);
+    return xstrncpyf(pOut, nSize, "%s%s%s%s", pColor, sTid, sDate, sTag);
 }
 
 static void slog_display_heap(const slog_context_t *pCtx, va_list args)
@@ -359,11 +360,11 @@ size_t slog_version(char *pDest, size_t nSize, uint8_t nMin)
     size_t nLength = 0;
 
     /* Version short */
-    if (nMin) nLength = snprintf(pDest, nSize, "%d.%d.%d", 
+    if (nMin) nLength = xstrncpyf(pDest, nSize, "%d.%d.%d", 
         SLOG_VERSION_MAJOR, SLOG_VERSION_MINOR, SLOG_BUILD_NUM);
 
     /* Version long */
-    else nLength = snprintf(pDest, nSize, "%d.%d build %d (%s)", 
+    else nLength = xstrncpyf(pDest, nSize, "%d.%d build %d (%s)", 
         SLOG_VERSION_MAJOR, SLOG_VERSION_MINOR, SLOG_BUILD_NUM, __DATE__);
 
     return nLength;
@@ -458,7 +459,7 @@ void slog_init(const char* pName, uint16_t nFlags, uint8_t nTdSafe)
     pCfg->nFlags = nFlags;
 
     const char *pFileName = (pName != NULL) ? pName : SLOG_NAME_DEFAULT;
-    snprintf(pCfg->sFileName, sizeof(pCfg->sFileName), "%s", pFileName);
+    xstrncpyf(pCfg->sFileName, sizeof(pCfg->sFileName), "%s", pFileName);
 
 #ifdef WIN32
     // Enable color support

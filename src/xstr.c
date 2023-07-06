@@ -16,9 +16,9 @@ char* xstrafmt(const char *pFmt, ...)
     va_list args;
     char *pDest = NULL;
     va_start(args, pFmt);
-    vasprintf(&pDest, pFmt, args);
+    int nBytes = vasprintf(&pDest, pFmt, args);
     va_end(args);
-    return pDest;
+    return nBytes > 0 ? pDest : NULL;
 }
 
 size_t xstrncpy(char *pDst, size_t nSize, const char* pSrc)

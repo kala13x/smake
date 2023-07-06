@@ -125,7 +125,7 @@ int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
     while(XDir_Read(&dir, sFileName, sizeof(sFileName)) > 0)
     {
         char sFullPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
-        int nBytes = snprintf(sFullPath, sizeof(sFullPath), "%s/%s", pPath, sFileName);
+        int nBytes = xstrncpyf(sFullPath, sizeof(sFullPath), "%s/%s", pPath, sFileName);
         if (nBytes <= 0) continue;
 
         if (SMake_IsExcluded(pCtx, sFullPath))
@@ -307,7 +307,7 @@ int SMake_ParseProject(SMakeContext *pCtx)
             sName[nLength] = XSTRNULL;
 
             char sPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
-            snprintf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
+            xstrncpyf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
             if (SMake_FindMain(pCtx, sPath)) xstrncpy(pCtx->sMain, sizeof(pCtx->sMain), sName);
 
             size_t nLeftBytes = sizeof(sName) - nLength;
@@ -340,12 +340,12 @@ int SMake_InitProject(SMakeContext *pCtx)
             return 0;
         }
 
-        snprintf(pCtx->sName, sizeof(pCtx->sName), "%s", sPwd);
+        xstrncpyf(pCtx->sName, sizeof(pCtx->sName), "%s", sPwd);
         char *pTok = strtok_r(sPwd, "/", &pSavePtr);
 
         while (pTok != NULL)
         {
-            snprintf(pCtx->sName, sizeof(pCtx->sName), "%s", pTok);
+            xstrncpyf(pCtx->sName, sizeof(pCtx->sName), "%s", pTok);
             pTok = strtok_r(NULL, "/", &pSavePtr);
         }
     }
@@ -420,8 +420,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
     char sMakefile[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
     slogd("Starting Makefile generation: %s/Makefile", pCtx->sPath);
 
-    if (pCtx->nVPath) snprintf(sMakefile, sizeof(sMakefile), "Makefile");
-    else snprintf(sMakefile, sizeof(sMakefile), "%s/Makefile", pCtx->sPath);
+    if (pCtx->nVPath) xstrncpyf(sMakefile, sizeof(sMakefile), "Makefile");
+    else xstrncpyf(sMakefile, sizeof(sMakefile), "%s/Makefile", pCtx->sPath);
 
     if (XPath_Exists(sMakefile) && !pCtx->nOverwrite)
     {
@@ -431,8 +431,8 @@ int SMake_WriteMake(SMakeContext *pCtx)
         char sAnswer[8];
         sAnswer[0] = '\0';
 
-        fgets(sAnswer, sizeof(sAnswer), stdin);
-        if (sAnswer[0] != 'y' && sAnswer[0] != 'Y') return 0;
+        char *ptr = fgets(sAnswer, sizeof(sAnswer), stdin);
+        if (ptr == NULL || (sAnswer[0] != 'y' && sAnswer[0] != 'Y')) return 0;
     }
 
     FILE *pFile = fopen(sMakefile, "w");
@@ -465,7 +465,9 @@ int SMake_WriteMake(SMakeContext *pCtx)
     SMake_GetIncludes(pCtx, sIncludes, sizeof(sIncludes));
 
     fprintf(pFile, "%s = %s\n", pLinker, pCtx->sFlags);
-    fprintf(pFile, "%s += %s\n", pLinker, sIncludes);
+    if (sIncludes[0] != XSTRNULL)
+        fprintf(pFile, "%s += %s\n", pLinker, sIncludes);
+
     fprintf(pFile, "LIBS = %s\n", pCtx->sLibs);
     fprintf(pFile, "NAME = %s\n", pCtx->sName);
     fprintf(pFile, "ODIR = %s\n", pCtx->sOutDir);

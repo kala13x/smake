@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "xstr.h": "c"
+        "xstr.h": "c",
+        "slog.h": "c",
+        "xjson.h": "c"
     }
 }

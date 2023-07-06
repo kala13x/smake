@@ -19,6 +19,7 @@
 #include <stdarg.h>
 
 #include "xjson.h"
+#include "xstr.h"
 
 #define XJSON_ASSERT(condition) \
     if (!condition) return XJSON_FAILURE
@@ -45,20 +46,20 @@ int XJSON_GetErrorStr(xjson_t *pJson, char *pOutput, size_t nSize)
     switch (pJson->nError)
     {
         case XJSON_ERR_INVALID: 
-            return snprintf(pOutput, nSize, "Invalid item at posit(%zu)", pJson->nOffset);
+            return xstrncpyf(pOutput, nSize, "Invalid item at posit(%zu)", pJson->nOffset);
         case XJSON_ERR_EXITS: 
-            return snprintf(pOutput, nSize, "Duplicate Key at posit(%zu)", pJson->nOffset);
+            return xstrncpyf(pOutput, nSize, "Duplicate Key at posit(%zu)", pJson->nOffset);
         case XJSON_ERR_BOUNDS: 
-            return snprintf(pOutput, nSize, "Unexpected EOF at posit(%zu)", pJson->nOffset);
+            return xstrncpyf(pOutput, nSize, "Unexpected EOF at posit(%zu)", pJson->nOffset);
         case XJSON_ERR_ALLOC: 
-            return snprintf(pOutput, nSize, "Can not allocate memory for object at posit(%zu)", pJson->nOffset);
+            return xstrncpyf(pOutput, nSize, "Can not allocate memory for object at posit(%zu)", pJson->nOffset);
         case XJSON_ERR_UNEXPECTED: 
-            return snprintf(pOutput, nSize, "Unexpected symbol '%c' at posit(%zu)", pJson->pData[pJson->nOffset], pJson->nOffset);
+            return xstrncpyf(pOutput, nSize, "Unexpected symbol '%c' at posit(%zu)", pJson->pData[pJson->nOffset], pJson->nOffset);
         default:
             break;
     }
 
-    return snprintf(pOutput, nSize, "Undeclared error");
+    return xstrncpyf(pOutput, nSize, "Undeclared error");
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -918,7 +919,7 @@ xjson_obj_t* XJSON_NewU64(const char *pName, uint64_t nValue)
     char *pValue = (char*)malloc(XJSON_NUMBER_MAX);
     if (pValue == NULL) return NULL;
 
-    snprintf(pValue, XJSON_NUMBER_MAX, "%"PRIu64, nValue);
+    xstrncpyf(pValue, XJSON_NUMBER_MAX, "%"PRIu64, nValue);
     xjson_obj_t *pObj = XJSON_CreateObject(pName, pValue, XJSON_TYPE_NUMBER);
 
     if (pObj == NULL)
@@ -935,7 +936,7 @@ xjson_obj_t* XJSON_NewInt(const char *pName, int nValue)
     char *pValue = (char*)malloc(XJSON_NUMBER_MAX);
     if (pValue == NULL) return NULL;
 
-    snprintf(pValue, XJSON_NUMBER_MAX, "%d", nValue);
+    xstrncpyf(pValue, XJSON_NUMBER_MAX, "%d", nValue);
     xjson_obj_t *pObj = XJSON_CreateObject(pName, pValue, XJSON_TYPE_NUMBER);
 
     if (pObj == NULL)
@@ -952,7 +953,7 @@ xjson_obj_t* XJSON_NewFloat(const char *pName, double fValue)
     char *pValue = (char*)malloc(XJSON_NUMBER_MAX);
     if (pValue == NULL) return NULL;
 
-    snprintf(pValue, XJSON_NUMBER_MAX, "%lf", fValue);
+    xstrncpyf(pValue, XJSON_NUMBER_MAX, "%lf", fValue);
     xjson_obj_t *pObj = XJSON_CreateObject(pName, pValue, XJSON_TYPE_FLOAT);
 
     if (pObj == NULL)
@@ -985,7 +986,7 @@ xjson_obj_t* XJSON_NewBool(const char *pName, int nValue)
     char *pValue = (char*)malloc(XJSON_BOOL_MAX);
     if (pValue == NULL) return NULL;
 
-    snprintf(pValue, XJSON_BOOL_MAX, "%s", nValue ? "true" : "false");
+    xstrncpyf(pValue, XJSON_BOOL_MAX, "%s", nValue ? "true" : "false");
     xjson_obj_t *pObj = XJSON_CreateObject(pName, pValue, XJSON_TYPE_BOOLEAN);
 
     if (pObj == NULL)
@@ -1002,7 +1003,7 @@ xjson_obj_t* XJSON_NewNull(const char *pName)
     char *pValue = (char*)malloc(XJSON_NULL_MAX);
     if (pValue == NULL) return NULL;
 
-    snprintf(pValue, XJSON_NULL_MAX, "%s", "null");
+    xstrncpyf(pValue, XJSON_NULL_MAX, "%s", "null");
     xjson_obj_t *pObj = XJSON_CreateObject(pName, pValue, XJSON_TYPE_NULL);
 
     if (pObj == NULL)
@@ -1329,7 +1330,7 @@ static int XJSON_AppedSpaces(xjson_writer_t *pWriter)
     XJSON_ASSERT(XJSON_Realloc(pWriter, nLenght));
 
     char *pOffset = &pWriter->pData[pWriter->nLength];
-    nLenght = snprintf(pOffset, pWriter->nAvail, "%s", sSpaces);
+    nLenght = xstrncpyf(pOffset, pWriter->nAvail, "%s", sSpaces);
 
     pWriter->nLength += nLenght;
     pWriter->nAvail -= nLenght;

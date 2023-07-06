@@ -103,7 +103,7 @@ static void SMake_MergeConf(char *pOld, const char *pNew, const char *pDlmt)
     char sNew[SMAKE_LINE_MAX];
     char *pSavePtr = NULL;
 
-    snprintf(sNew, sizeof(sNew), pNew);
+    xstrncpyf(sNew, sizeof(sNew), pNew);
     char *pTok = strtok_r(sNew, pDlmt, &pSavePtr);
 
     while (pTok != NULL)
@@ -215,7 +215,7 @@ static void SMake_WriteExcluded(xjson_obj_t *pArrObj, const char *pExcludes)
     char sExcludes[SMAKE_LINE_MAX];
     char *pSavePtr = NULL;
 
-    snprintf(sExcludes, sizeof(sExcludes), pExcludes);
+    xstrncpyf(sExcludes, sizeof(sExcludes), pExcludes);
     char *pTok = strtok_r(sExcludes, ";", &pSavePtr);
 
     while (pTok != NULL)

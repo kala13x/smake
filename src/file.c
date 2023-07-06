@@ -326,7 +326,7 @@ int XDir_Create(const char *pDir, mode_t nMode)
     char sDir[XFILE_BUF_SIZE];
     int nStatus = 0;
 
-    int nLen = snprintf(sDir, sizeof(sDir), "%s", pDir);
+    int nLen = xstrncpyf(sDir, sizeof(sDir), "%s", pDir);
     if (nLen <= 0) return nStatus;
 
     if(sDir[nLen-1] == '/') sDir[nLen-1] = 0;
@@ -372,7 +372,7 @@ int XDir_Remove(const char *pPath)
             size_t nSize = nLength + strlen(dir.pEntry->d_name) + 2;
             char sPath[nSize];
 
-            snprintf(sPath, nSize, "%s/%s", pPath, dir.pEntry->d_name);
+            xstrncpyf(sPath, nSize, "%s/%s", pPath, dir.pEntry->d_name);
             nStatus = XFILE_INVALID;
             struct stat statbuf;
 
