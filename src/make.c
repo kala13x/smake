@@ -7,9 +7,6 @@
  */
 
 #include "stdinc.h"
-#include "file.h"
-#include "xstr.h"
-#include "slog.h"
 #include "make.h"
 #include "cfg.h"
 
@@ -31,7 +28,7 @@ SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
     SMakeFile *pFile = malloc(sizeof(SMakeFile));
     if (pFile == NULL)
     {
-        sloge("Can not allocate memory for file");
+        xloge("Can not allocate memory for file");
         return NULL;
     }
 
@@ -56,16 +53,16 @@ void SMake_InitContext(SMakeContext *pCtx)
     pCtx->incArr.clearCb = SMake_ClearCallback;
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
-    pCtx->sPath[1] = pCtx->sOutDir[1] = XSTRNULL;
-    pCtx->sCompiler[0] = XSTRNULL;
-    pCtx->sIncludes[0] = XSTRNULL;
-    pCtx->sExcept[0] = XSTRNULL;
-    pCtx->sConfig[0] = XSTRNULL;
-    pCtx->sBinary[0] = XSTRNULL;
-    pCtx->sFlags[0] = XSTRNULL;
-    pCtx->sName[0] = XSTRNULL;
-    pCtx->sMain[0] = XSTRNULL;
-    pCtx->sLibs[0] = XSTRNULL;
+    pCtx->sPath[1] = pCtx->sOutDir[1] = XSTR_NUL;
+    pCtx->sCompiler[0] = XSTR_NUL;
+    pCtx->sIncludes[0] = XSTR_NUL;
+    pCtx->sExcept[0] = XSTR_NUL;
+    pCtx->sConfig[0] = XSTR_NUL;
+    pCtx->sBinary[0] = XSTR_NUL;
+    pCtx->sFlags[0] = XSTR_NUL;
+    pCtx->sName[0] = XSTR_NUL;
+    pCtx->sMain[0] = XSTR_NUL;
+    pCtx->sLibs[0] = XSTR_NUL;
     pCtx->nOverwrite = 0;
     pCtx->nVerbose = 0;
     pCtx->nVPath = 0;
@@ -110,14 +107,14 @@ int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
 {
     if (SMake_IsExcluded(pCtx, pPath))
     {
-        slogi("Path is excluded: %s", pPath);
+        xlogi("Path is excluded: %s", pPath);
         return 0;
     }
 
-    XDir dir;
+    xdir_t dir;
     if (!(XDir_Open(&dir, pPath)))
     {
-        sloge("Can not open directory: %s", pPath);
+        xloge("Can not open directory: %s", pPath);
         return 0;
     }
 
@@ -130,19 +127,19 @@ int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
 
         if (SMake_IsExcluded(pCtx, sFullPath))
         {
-            slogi("Path is excluded: %s", sFullPath);
+            xlogi("Path is excluded: %s", sFullPath);
             continue;
         }
 
         int nType = SMake_GetFileType(sFullPath, nBytes);
-        int nDir = (int)dir.pEntry->d_type == 4 ? 1 : 0;
+        int nDir = (int)(dir.pEntry->d_type) == 4 ? 1 : 0;
 
         if (!nDir && nType != SMAKE_FILE_UNF)
         {
             SMakeFile *pFile = SMake_FileNew(pPath, sFileName, nType);
             if (pFile == NULL) return 0;
 
-            slogd("Found project file: %s", sFullPath);
+            xlogd("Found project file: %s", sFullPath);
             XArray_AddData(&pCtx->fileArr, pFile, 0);
         }
 
@@ -150,18 +147,18 @@ int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath)
     }
 
     XDir_Close(&dir);
-    return XArray_GetUsedSize(&pCtx->fileArr);
+    return XArray_Used(&pCtx->fileArr);
 }
 
 static int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
 {
-    XFile srcFile;
+    xfile_t srcFile;
 	char sLine[SMAKE_LINE_MAX];
 
-    XFile_Open(&srcFile, pPath, "r");
+    XFile_Open(&srcFile, pPath, "r", NULL);
     if (srcFile.nFD < 0)
     {
-        sloge("Can not open source file: %s", pPath);
+        xloge("Can not open source file: %s", pPath);
         return 0;
     }
 
@@ -176,12 +173,12 @@ static int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
             if (*pLine == '(') 
             {
                 int nRetVal = 1;
-                slogi("Located main function in file: %s", pPath);
+                xlogi("Located main function in file: %s", pPath);
 
                 if (strlen(pCtx->sMain))
                 {
-                    sloge("Main function already exists in \"%s\" object", pCtx->sMain);
-                    slogi("You can exclude file or directory with argument: -e");
+                    xloge("Main function already exists in \"%s\" object", pCtx->sMain);
+                    xlogi("You can exclude file or directory with argument: -e");
                     nRetVal = 0;
                 }
 
@@ -199,7 +196,7 @@ static int SMake_FindMain(SMakeContext *pCtx, const char *pPath)
 
 static void SMake_ProcessHeader(SMakeContext *pCtx, SMakeFile *pFile)
 {
-    size_t i, nCount = XArray_GetUsedSize(&pCtx->hdrArr);
+    size_t i, nCount = XArray_Used(&pCtx->hdrArr);
     for (i = 0; i < nCount; i++)
     {
         const char *pPath = (const char*)XArray_GetData(&pCtx->hdrArr, i);
@@ -212,7 +209,7 @@ static void SMake_ProcessHeader(SMakeContext *pCtx, SMakeFile *pFile)
 static void SMake_ProcessPath(SMakeContext *pCtx, char *pPath)
 {
     if (!strncmp(pCtx->sPath, pPath, strlen(pPath))) return;
-    size_t i, nCount = XArray_GetUsedSize(&pCtx->vPaths);
+    size_t i, nCount = XArray_Used(&pCtx->vPaths);
 
     for (i = 0; i < nCount; i++)
     {
@@ -225,7 +222,7 @@ static void SMake_ProcessPath(SMakeContext *pCtx, char *pPath)
 
 static uint8_t SMake_GetVPath(SMakeContext *pCtx, char *pPath, size_t nSize)
 {
-    size_t nCount = XArray_GetUsedSize(&pCtx->vPaths);
+    size_t nCount = XArray_Used(&pCtx->vPaths);
     size_t i, nAvail = nSize;
     uint8_t nStarted = 0;
 
@@ -244,7 +241,7 @@ static uint8_t SMake_GetVPath(SMakeContext *pCtx, char *pPath, size_t nSize)
 
 static void SMake_ProcessIncludes(SMakeContext *pCtx, char *pPath)
 {
-    size_t i, nCount = XArray_GetUsedSize(&pCtx->incArr);
+    size_t i, nCount = XArray_Used(&pCtx->incArr);
     for (i = 0; i < nCount; i++)
     {
         const char *pIncPath = (const char*)XArray_GetData(&pCtx->incArr, i);
@@ -256,7 +253,7 @@ static void SMake_ProcessIncludes(SMakeContext *pCtx, char *pPath)
 
 static uint8_t SMake_GetIncludes(SMakeContext *pCtx, char *pPath, size_t nSize)
 {
-    size_t nCount = XArray_GetUsedSize(&pCtx->incArr);
+    size_t nCount = XArray_Used(&pCtx->incArr);
     size_t i, nAvail = nSize;
     uint8_t nStarted = 0;
 
@@ -275,7 +272,7 @@ static uint8_t SMake_GetIncludes(SMakeContext *pCtx, char *pPath, size_t nSize)
 
 int SMake_ParseProject(SMakeContext *pCtx)
 {
-    size_t i, nFiles = XArray_GetUsedSize(&pCtx->fileArr);
+    size_t i, nFiles = XArray_Used(&pCtx->fileArr);
     for (i = 0; i < nFiles; i++)
     {
         SMakeFile *pFile = (SMakeFile*)XArray_GetData(&pCtx->fileArr, i);
@@ -299,12 +296,12 @@ int SMake_ParseProject(SMakeContext *pCtx)
 
             if (!nLastBytes)
             {
-                slogd("Skipping file: %s/%s", pFile->sPath, pFile->sName);
+                xlogd("Skipping file: %s/%s", pFile->sPath, pFile->sName);
                 continue;
             }
 
             nLength -= nLastBytes;
-            sName[nLength] = XSTRNULL;
+            sName[nLength] = XSTR_NUL;
 
             char sPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
             xstrncpyf(sPath, sizeof(sPath), "%s/%s", pFile->sPath, pFile->sName);
@@ -319,12 +316,12 @@ int SMake_ParseProject(SMakeContext *pCtx)
                 SMake_ProcessPath(pCtx, pObj->sPath);
                 XArray_AddData(&pCtx->objArr, pObj, 0);
 
-                slogd("Loaded compile object: %s/%s", pObj->sPath, sName);
+                xlogd("Loaded compile object: %s/%s", pObj->sPath, sName);
             }
         }
     }
 
-    return XArray_GetUsedSize(&pCtx->objArr);
+    return XArray_Used(&pCtx->objArr);
 }
 
 int SMake_InitProject(SMakeContext *pCtx)
@@ -336,7 +333,7 @@ int SMake_InitProject(SMakeContext *pCtx)
 
         if (getcwd(sPwd, sizeof(sPwd)) == NULL)
         {
-            sloge("Filed to read current directory: %s", strerror(errno));
+            xloge("Filed to read current directory: %s", strerror(errno));
             return 0;
         }
 
@@ -355,7 +352,7 @@ int SMake_InitProject(SMakeContext *pCtx)
 
     if (strlen(pPath) && !XPath_Exists(pPath) && !XDir_Create(pPath, 0775))
     {
-        sloge("Filed to create directory: %s (%s)", pPath, strerror(errno));
+        xloge("Filed to create directory: %s (%s)", pPath, strerror(errno));
         return 0;
     }
 
@@ -368,7 +365,7 @@ int SMake_InitProject(SMakeContext *pCtx)
         FILE *pFile = fopen(sSourceFile, "w");
         if (pFile == NULL)
         {
-            sloge("Can not open source file: %s (%s)",
+            xloge("Can not open source file: %s (%s)",
                 sSourceFile, strerror(errno));
 
             return 0;
@@ -418,27 +415,26 @@ int SMake_CompareLen(const void *pData1, const void *pData2, void *pCtx)
 int SMake_WriteMake(SMakeContext *pCtx)
 {
     char sMakefile[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
-    slogd("Starting Makefile generation: %s/Makefile", pCtx->sPath);
+    xlogd("Starting Makefile generation: %s/Makefile", pCtx->sPath);
 
     if (pCtx->nVPath) xstrncpyf(sMakefile, sizeof(sMakefile), "Makefile");
     else xstrncpyf(sMakefile, sizeof(sMakefile), "%s/Makefile", pCtx->sPath);
 
     if (XPath_Exists(sMakefile) && !pCtx->nOverwrite)
     {
-        slogw("The Makefile already exists: %s", sMakefile);
-        slogc(SLOG_WARN, 0, "Would you like to owerwrite? (Y/N): ");
+        xlogw("The Makefile already exists: %s", sMakefile);
 
         char sAnswer[8];
         sAnswer[0] = '\0';
 
-        char *ptr = fgets(sAnswer, sizeof(sAnswer), stdin);
-        if (ptr == NULL || (sAnswer[0] != 'y' && sAnswer[0] != 'Y')) return 0;
+        XCLI_GetInput("Would you like to owerwrite? (Y/N): ", sAnswer, sizeof(sAnswer), XTRUE);
+        if (!xstrused(sAnswer) || (sAnswer[0] != 'y' && sAnswer[0] != 'Y')) return 0;
     }
 
     FILE *pFile = fopen(sMakefile, "w");
     if (pFile == NULL)
     {
-        sloge("Can not open destination file");
+        xloge("Can not open destination file");
         return 0;
     }
 
@@ -451,7 +447,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     const char *pLinker = pCtx->nCPP ? "CXXFLAGS" : "CFLAGS";
 
     char sIncludes[SMAKE_LINE_MAX];
-    sIncludes[0] = XSTRNULL;
+    sIncludes[0] = XSTR_NUL;
 
     int nStatic, nShared;
     nStatic = nShared = 0;
@@ -465,7 +461,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
     SMake_GetIncludes(pCtx, sIncludes, sizeof(sIncludes));
 
     fprintf(pFile, "%s = %s\n", pLinker, pCtx->sFlags);
-    if (sIncludes[0] != XSTRNULL)
+    if (sIncludes[0] != XSTR_NUL)
         fprintf(pFile, "%s += %s\n", pLinker, sIncludes);
 
     fprintf(pFile, "LIBS = %s\n", pCtx->sLibs);
@@ -474,15 +470,15 @@ int SMake_WriteMake(SMakeContext *pCtx)
     fprintf(pFile, "OBJ = o\n\n");
     fprintf(pFile, "OBJS = ");
 
-    slogi("Compiler flags: %s", pCtx->sFlags);
-    slogi("Include flags: %s", sIncludes);
-    slogi("Linked libraries: %s", pCtx->sLibs);
-    slogi("Binary file name: %s", pCtx->sName);
-    slogi("Output Directory: %s", pCtx->sOutDir);
-    slogi("Compiler: %s", strlen(pCtx->sCompiler) ? pCtx->sCompiler : pCompiler);
+    xlogi("Compiler flags: %s", pCtx->sFlags);
+    xlogi("Include flags: %s", sIncludes);
+    xlogi("Linked libraries: %s", pCtx->sLibs);
+    xlogi("Binary file name: %s", pCtx->sName);
+    xlogi("Output Directory: %s", pCtx->sOutDir);
+    xlogi("Compiler: %s", strlen(pCtx->sCompiler) ? pCtx->sCompiler : pCompiler);
 
     XArray_Sort(&pCtx->objArr, SMake_CompareName, NULL);
-    size_t i, nObjs = XArray_GetUsedSize(&pCtx->objArr);
+    size_t i, nObjs = XArray_Used(&pCtx->objArr);
 
     for (i = 0; i < nObjs; i++)
     {
@@ -494,11 +490,11 @@ int SMake_WriteMake(SMakeContext *pCtx)
 
         if (i == (nObjs - 1)) fprintf(pFile, "\t%s\n\n", pObj->sName);
         else fprintf(pFile, "\t%s \\\n", pObj->sName);
-        slogd("Added object to recept: %s", pObj->sName);
+        xlogd("Added object to recept: %s", pObj->sName);
     }
 
     char sVPath[SMAKE_PATH_MAX];
-    sVPath[0] = XSTRNULL;
+    sVPath[0] = XSTR_NUL;
 
     XArray_Sort(&pCtx->vPaths, SMake_CompareLen, NULL);
     SMake_GetVPath(pCtx, sVPath, sizeof(sVPath));
@@ -530,7 +526,7 @@ int SMake_WriteMake(SMakeContext *pCtx)
 
         if (nBinary)
         {
-            slogi("Install location for binary: %s -> %s", pCtx->sName, pCtx->sBinary);
+            xlogi("Install location for binary: %s -> %s", pCtx->sName, pCtx->sBinary);
             fprintf(pFile, "\t@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)\n");
             fprintf(pFile, "\t@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/\n");
         }
@@ -538,14 +534,14 @@ int SMake_WriteMake(SMakeContext *pCtx)
         if (nIncludes)
         {
             fprintf(pFile, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
-            size_t nCount = XArray_GetUsedSize(&pCtx->hdrArr);
+            size_t nCount = XArray_Used(&pCtx->hdrArr);
 
             for (i = 0; i < nCount; i++)
             {
                 const char *pPath = (const char*)XArray_GetData(&pCtx->hdrArr, i);
                 if (pPath != NULL)
                 {
-                    slogi("Install location for headers: %s -> %s", pPath, pCtx->sIncludes);
+                    xlogi("Install location for headers: %s -> %s", pPath, pCtx->sIncludes);
                     fprintf(pFile, "\t@cp -r %s/*.h $(INSTALL_INC)/\n", pPath);
                 }
             }

@@ -1,7 +1,10 @@
 {
     "files.associations": {
         "xstr.h": "c",
-        "slog.h": "c",
-        "xjson.h": "c"
+        "xlog.h": "c",
+        "xjson.h": "c",
+        "xfs.h": "c",
+        "array.h": "c",
+        "xstd.h": "c"
     }
 }

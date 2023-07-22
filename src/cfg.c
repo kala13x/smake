@@ -7,12 +7,8 @@
  */
 
 #include "stdinc.h"
-#include "xjson.h"
-#include "slog.h"
-#include "xstr.h"
 #include "make.h"
 #include "info.h"
-#include "file.h"
 #include "cfg.h"
 
 extern char *optarg;
@@ -26,11 +22,11 @@ static void SMake_CopyPath(char *pDst, int nSize, const char *pSrc)
 
 int SMake_GetLogFlags(uint8_t nVerbose)
 {
-    int nLogFlags = SLOG_ERROR | SLOG_WARN;
-    if (nVerbose) nLogFlags |= SLOG_NOTE;
-    if (nVerbose > 1) nLogFlags |= SLOG_INFO;
-    if (nVerbose > 2) nLogFlags |= SLOG_DEBUG;
-    if (nVerbose > 3) nLogFlags = SLOG_FLAGS_ALL;
+    int nLogFlags = XLOG_ERROR | XLOG_WARN;
+    if (nVerbose) nLogFlags |= XLOG_NOTE;
+    if (nVerbose > 1) nLogFlags |= XLOG_INFO;
+    if (nVerbose > 2) nLogFlags |= XLOG_DEBUG;
+    if (nVerbose > 3) nLogFlags = XLOG_ALL;
     return nLogFlags;
 }
 
@@ -122,31 +118,20 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
 {
     const char *pCfgPath = strlen(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
     size_t nSize = 0;
-    XFile file;
 
-    if (XFile_Open(&file, pCfgPath, "r") < 0)
-    {
-        if (strlen(pCtx->sConfig)) 
-            sloge("Can not open file: %s (%s)", pCfgPath, strerror(errno));
-        return 0;
-    }
-
-    char *pBuffer = (char*)XFile_ReadBuffer(&file, &nSize);
+    char *pBuffer = (char*)XPath_Load(pCfgPath, &nSize);
     if (pBuffer == NULL)
     {
-        sloge("Can not read file: %s (%s)", pCfgPath, strerror(errno));
-        XFile_Close(&file);
+        xloge("Can not read file: %s (%s)", pCfgPath, strerror(errno));
         return 0;
     }
 
-    XFile_Close(&file);
     xjson_t json;
-
     if (!XJSON_Parse(&json, pBuffer, nSize))
     {
         char sError[256];
         XJSON_GetErrorStr(&json, sError, sizeof(sError));
-        sloge("Failed to parse JSON: %s", sError);
+        xloge("Failed to parse JSON: %s", sError);
 
         XJSON_Destroy(&json);
         free(pBuffer);
@@ -227,10 +212,10 @@ static void SMake_WriteExcluded(xjson_obj_t *pArrObj, const char *pExcludes)
 
 int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
 {
-    xjson_obj_t *pRootObj = XJSON_NewObject(NULL);
+    xjson_obj_t *pRootObj = XJSON_NewObject(NULL, XFALSE);
     if (pRootObj != NULL)
     {
-        xjson_obj_t *pBuildObj = XJSON_NewObject("build");
+        xjson_obj_t *pBuildObj = XJSON_NewObject("build", XFALSE);
         if (pBuildObj != NULL)
         {
             if (strlen(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString("name", pCtx->sName));
@@ -241,7 +226,7 @@ int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
 
             if (strlen(pCtx->sExcept))
             {
-                xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes");
+                xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes", XFALSE);
                 if (pExcludesArr != NULL)
                 {
                     SMake_WriteExcluded(pExcludesArr, pCtx->sExcept);
@@ -257,7 +242,7 @@ int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
 
         if (strlen(pCtx->sBinary) || strlen(pCtx->sIncludes))
         {
-            xjson_obj_t *pInstallObj = XJSON_NewObject("install");
+            xjson_obj_t *pInstallObj = XJSON_NewObject("install", XFALSE);
             if (pInstallObj != NULL)
             {
                 if (strlen(pCtx->sBinary)) XJSON_AddObject(pInstallObj, XJSON_NewString("binaryDir", pCtx->sBinary));

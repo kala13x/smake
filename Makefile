@@ -4,20 +4,17 @@
 ####################################
 
 CFLAGS = -g -O2 -Wall
-CFLAGS += -I./src
+CFLAGS += -I./src -I./xutils/build
+LD_LIBS = ./xutils/build/libxutils.a
 LIBS = -lpthread
 NAME = smake
 ODIR = ./obj
 OBJ = o
 
 OBJS = cfg.$(OBJ) \
-	file.$(OBJ) \
 	info.$(OBJ) \
 	make.$(OBJ) \
-	slog.$(OBJ) \
-	smake.$(OBJ) \
-	xjson.$(OBJ) \
-	xstr.$(OBJ)
+	smake.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
 INSTALL_BIN = /usr/bin
@@ -28,12 +25,12 @@ VPATH = ./src
 	$(CC) $(CFLAGS) -c -o $(ODIR)/$@ $< $(LIBS)
 
 $(NAME):$(OBJS)
-	$(CC) $(CFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)
 
 .PHONY: install
 install:
 	@test -d $(INSTALL_BIN) || mkdir -p $(INSTALL_BIN)
-	@install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/
+	install -m 0755 $(ODIR)/$(NAME) $(INSTALL_BIN)/
 
 .PHONY: clean
 clean:

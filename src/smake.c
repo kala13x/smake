@@ -7,14 +7,13 @@
  */
 
 #include "stdinc.h"
-#include "slog.h"
 #include "make.h"
 #include "info.h"
 #include "cfg.h"
 
 int main(int argc, char *argv[])
 {
-    slog_init("smake", SLOG_ERROR | SLOG_WARN, 0);
+    xlog_init("smake", XLOG_ERROR | XLOG_WARN, 0);
 
     SMakeContext smakeCtx;
     SMake_InitContext(&smakeCtx);
@@ -29,41 +28,41 @@ int main(int argc, char *argv[])
     int nLogFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
     if (smakeCtx.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
 
-    slog_config_t logCfg;
-    slog_config_get(&logCfg);
+    xlog_cfg_t logCfg;
+    xlog_get(&logCfg);
     logCfg.nFlags = nLogFlags;
-    logCfg.nIndent = 1;
-    slog_config_set(&logCfg);
+    logCfg.bIndent = XTRUE;
+    xlog_set(&logCfg);
 
     if (smakeCtx.nInit && !SMake_InitProject(&smakeCtx))
     {
-        sloge("Failed to initialize project");
+        xloge("Failed to initialize project");
         SMake_ClearContext(&smakeCtx);
         return -1;
     }
 
     if (!SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
     {
-        sloge("No input files found");
+        xloge("No input files found");
         SMake_ClearContext(&smakeCtx);
         return -1;
     }
 
     if (!SMake_ParseProject(&smakeCtx))
     {
-        sloge("Can not load object list");
+        xloge("Can not load object list");
         SMake_ClearContext(&smakeCtx);
         return -1;
     }
 
     if (!SMake_WriteMake(&smakeCtx))
     {
-        sloge("Failed to generate Makefile");
+        xloge("Failed to generate Makefile");
         SMake_ClearContext(&smakeCtx);
         return -1;
     }
     
-    slogn("Successfuly generated Makefile");
+    xlogn("Successfuly generated Makefile");
     SMake_ClearContext(&smakeCtx);
     return 0;
 }
