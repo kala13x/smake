@@ -9,8 +9,8 @@
 #define SMAKE_FULL_NAME       "Simple-Make"
 
 #define SMAKE_VERSION_MAX     1
-#define SMAKE_VERSION_MIN     0
-#define SMAKE_BUILD_NUMBER    34
+#define SMAKE_VERSION_MIN     1
+#define SMAKE_BUILD_NUMBER    2
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_

@@ -30,8 +30,81 @@ int SMake_GetLogFlags(uint8_t nVerbose)
     return nLogFlags;
 }
 
-int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
+xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize)
 {
+    size_t nCount = XArray_Used(pArr);
+    size_t i, nAvail = nSize;
+    xbool_t bStarted = XFALSE;
+
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pData = (const char*)XArray_GetData(pArr, i);
+        if (!xstrused(pData)) continue;
+
+        if (!bStarted)  bStarted = XTRUE;
+        else if (pDlmt) nAvail = xstrncatf(pOutput, nAvail, pDlmt);
+        nAvail = xstrncatf(pOutput, nAvail, "%s", pData);
+    }
+
+    return bStarted;
+}
+
+xbool_t SMake_AddToArray(xarray_t *pArr, const char *pFmt, ...)
+{
+    va_list args;
+    size_t nLength = 0;
+
+    va_start(args, pFmt);
+    char *pDest = xstracpyargs(pFmt, args, &nLength);
+    va_end(args);
+    XASSERT(pDest, XFALSE);
+
+    size_t i, nCount = XArray_Used(pArr);
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pData = (const char*)XArray_GetData(pArr, i);
+        if (xstrused(pData) && !strncmp(pData, pDest, strlen(pData)))
+        {
+            free(pDest);
+            return XTRUE;
+        }
+    }
+
+    int nIndex = XArray_AddData(pArr, pDest, XSTDNON);
+    xarray_data_t *pArrData = XArray_Get(pArr, nIndex);
+
+    if (pArrData == NULL)
+    {
+        free(pDest);
+        return XFALSE;
+    }
+
+    pArrData->nSize = nLength + 1;
+    return XTRUE;
+}
+
+xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput)
+{
+    xarray_t *pTokens = xstrsplit(pInput, pDlmt);
+    XASSERT(pTokens, XFALSE);
+
+    size_t i, nUsed = XArray_Used(pTokens);
+    for (i = 0; i < nUsed; i++)
+    {
+        const char *pToken = (const char*)XArray_GetData(pTokens, i);
+        if (xstrused(pToken)) SMake_AddToArray(pArr, "%s", pToken);
+    }
+
+    XArray_Destroy(pTokens);
+    return XSTDOK;
+}
+
+int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
+{
+    char sFlags[SMAKE_LINE_MAX];
+    char sLibs[SMAKE_LINE_MAX];
+    sFlags[0] = sLibs[0] = XSTR_NUL;
+
     int nChar = 0;
     while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:I1:d1:w1:x1:h1")) != -1)
     {
@@ -52,19 +125,19 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 SMake_CopyPath(pCtx->sExcept, sizeof(pCtx->sExcept), optarg);
                 break;
             case 'b':
-                SMake_CopyPath(pCtx->sBinary, sizeof(pCtx->sBinary), optarg);
+                SMake_CopyPath(pCtx->sBinaryDst, sizeof(pCtx->sBinaryDst), optarg);
                 break;
             case 'i':
-                SMake_CopyPath(pCtx->sIncludes, sizeof(pCtx->sIncludes), optarg);
+                SMake_CopyPath(pCtx->sHeaderDst, sizeof(pCtx->sHeaderDst), optarg);
                 break;
             case 'f':
-                xstrncpy(pCtx->sFlags, sizeof(pCtx->sFlags), optarg);
+                xstrncpy(sFlags, sizeof(sFlags), optarg);
                 break;
             case 'g':
                 xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), optarg);
                 break;
             case 'l':
-                xstrncpy(pCtx->sLibs, sizeof(pCtx->sLibs), optarg);
+                xstrncpy(sLibs, sizeof(sLibs), optarg);
                 break;
             case 'p':
                 xstrncpy(pCtx->sName, sizeof(pCtx->sName), optarg);
@@ -73,16 +146,16 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 pCtx->nVerbose = atoi(optarg);
                 break;
             case 'w':
-                pCtx->nOverwrite = 1;
+                pCtx->bOverwrite = XTRUE;
                 break;
             case 'd':
-                pCtx->nVPath = 1;
+                pCtx->bVPath = XTRUE;
                 break;
             case 'x':
-                pCtx->nCPP = 1;
+                pCtx->bIsCPP = XTRUE;
                 break;
             case 'I':
-                pCtx->nInit = 1;
+                pCtx->bIsInit = XTRUE;
                 break;
             case 'h':
             default:
@@ -90,6 +163,9 @@ int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[])
                 return -1;
         }
     }
+
+    if (xstrused(sFlags)) SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, sFlags);
+    if (xstrused(sLibs)) SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, sLibs);
 
     return 0;
 }
@@ -114,7 +190,7 @@ static void SMake_MergeConf(char *pOld, const char *pNew, const char *pDlmt)
     }
 }
 
-int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
+int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 {
     const char *pCfgPath = strlen(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
     size_t nSize = 0;
@@ -122,7 +198,7 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
     char *pBuffer = (char*)XPath_Load(pCfgPath, &nSize);
     if (pBuffer == NULL)
     {
-        xloge("Can not read file: %s (%s)", pCfgPath, strerror(errno));
+        xloge("Can not read file: %s (%s)", pCfgPath, XSTRERR);
         return 0;
     }
 
@@ -152,11 +228,19 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
             }
         }
 
-        xjson_obj_t *pValueObj = XJSON_GetObject(pBuildObj, "libs");
-        if (pValueObj != NULL) SMake_MergeConf(pCtx->sLibs, XJSON_GetString(pValueObj), " ");
+        xjson_obj_t *pValueObj = XJSON_GetObject(pBuildObj, "flags");
+        if (pValueObj != NULL)
+        {
+            const char *pFlags = XJSON_GetString(pValueObj);
+            SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, pFlags);
+        }
 
-        pValueObj = XJSON_GetObject(pBuildObj, "flags");
-        if (pValueObj != NULL) SMake_MergeConf(pCtx->sFlags, XJSON_GetString(pValueObj), " ");
+        pValueObj = XJSON_GetObject(pBuildObj, "libs");
+        if (pValueObj != NULL)
+        {
+            const char *pLibs = XJSON_GetString(pValueObj);
+            SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, pLibs);
+        }
 
         pValueObj = XJSON_GetObject(pBuildObj, "name");
         if (pValueObj != NULL) xstrncpy(pCtx->sName, sizeof(pCtx->sName), XJSON_GetString(pValueObj));
@@ -171,23 +255,23 @@ int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath)
         if (pValueObj != NULL && !pCtx->nVerbose) pCtx->nVerbose = XJSON_GetInt(pValueObj);
 
         pValueObj = XJSON_GetObject(pBuildObj, "overwrite");
-        if (pValueObj != NULL) pCtx->nOverwrite = XJSON_GetBool(pValueObj);
+        if (pValueObj != NULL) pCtx->bOverwrite = XJSON_GetBool(pValueObj);
 
         pValueObj = XJSON_GetObject(pBuildObj, "vpath");
-        if (pValueObj != NULL) pCtx->nVPath = XJSON_GetBool(pValueObj);
+        if (pValueObj != NULL) pCtx->bVPath = XJSON_GetBool(pValueObj);
 
         pValueObj = XJSON_GetObject(pBuildObj, "cxx");
-        if (pValueObj != NULL) pCtx->nCPP = XJSON_GetBool(pValueObj);
+        if (pValueObj != NULL) pCtx->bIsCPP = XJSON_GetBool(pValueObj);
     }
 
     xjson_obj_t *pInstallObj = XJSON_GetObject(json.pRootObj, "install");
     if (pInstallObj != NULL)
     {
         xjson_obj_t *pValueObj = XJSON_GetObject(pInstallObj, "binaryDir");
-        if (pValueObj != NULL) xstrncpy(pCtx->sBinary, sizeof(pCtx->sBinary), XJSON_GetString(pValueObj));
+        if (pValueObj != NULL) xstrncpy(pCtx->sBinaryDst, sizeof(pCtx->sBinaryDst), XJSON_GetString(pValueObj));
 
         pValueObj = XJSON_GetObject(pInstallObj, "headerDir");
-        if (pValueObj != NULL) xstrncpy(pCtx->sIncludes, sizeof(pCtx->sIncludes), XJSON_GetString(pValueObj));
+        if (pValueObj != NULL) xstrncpy(pCtx->sHeaderDst, sizeof(pCtx->sHeaderDst), XJSON_GetString(pValueObj));
     }
 
     XJSON_Destroy(&json);
@@ -210,7 +294,7 @@ static void SMake_WriteExcluded(xjson_obj_t *pArrObj, const char *pExcludes)
     }
 }
 
-int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
+int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath)
 {
     xjson_obj_t *pRootObj = XJSON_NewObject(NULL, XFALSE);
     if (pRootObj != NULL)
@@ -218,13 +302,29 @@ int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
         xjson_obj_t *pBuildObj = XJSON_NewObject("build", XFALSE);
         if (pBuildObj != NULL)
         {
-            if (strlen(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString("name", pCtx->sName));
-            if (strlen(pCtx->sCompiler)) XJSON_AddObject(pBuildObj, XJSON_NewString("compiler", pCtx->sCompiler));
-            if (strlen(pCtx->sOutDir)) XJSON_AddObject(pBuildObj, XJSON_NewString("outputDir", pCtx->sOutDir));
-            if (strlen(pCtx->sFlags)) XJSON_AddObject(pBuildObj, XJSON_NewString("flags", pCtx->sFlags));
-            if (strlen(pCtx->sLibs)) XJSON_AddObject(pBuildObj, XJSON_NewString("libs", pCtx->sLibs));
+            if (xstrused(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString("name", pCtx->sName));
+            if (xstrused(pCtx->sCompiler)) XJSON_AddObject(pBuildObj, XJSON_NewString("compiler", pCtx->sCompiler));
+            if (xstrused(pCtx->sOutDir)) XJSON_AddObject(pBuildObj, XJSON_NewString("outputDir", pCtx->sOutDir));
 
-            if (strlen(pCtx->sExcept))
+            if (XArray_Used(&pCtx->flagArr))
+            {
+                char sFlags[XSTR_MID];
+                sFlags[0] = XSTR_NUL;
+
+                SMake_SerializeArray(&pCtx->flagArr, XSTR_SPACE, sFlags, sizeof(&pCtx->flagArr));
+                XJSON_AddObject(pBuildObj, XJSON_NewString("flags", sFlags));
+            }
+
+            if (XArray_Used(&pCtx->libArr))
+            {
+                char sFlags[XSTR_MID];
+                sFlags[0] = XSTR_NUL;
+
+                SMake_SerializeArray(&pCtx->libArr, XSTR_SPACE, sFlags, sizeof(&pCtx->libArr));
+                XJSON_AddObject(pBuildObj, XJSON_NewString("libs", sFlags));
+            }
+
+            if (xstrused(pCtx->sExcept))
             {
                 xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes", XFALSE);
                 if (pExcludesArr != NULL)
@@ -235,18 +335,18 @@ int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath)
             }
 
             XJSON_AddObject(pBuildObj, XJSON_NewInt("verbose", pCtx->nVerbose));
-            XJSON_AddObject(pBuildObj, XJSON_NewBool("overwrite", pCtx->nOverwrite));
-            XJSON_AddObject(pBuildObj, XJSON_NewBool("cxx", pCtx->nCPP));
+            XJSON_AddObject(pBuildObj, XJSON_NewBool("overwrite", pCtx->bOverwrite));
+            XJSON_AddObject(pBuildObj, XJSON_NewBool("cxx", pCtx->bIsCPP));
             XJSON_AddObject(pRootObj, pBuildObj);
         }
 
-        if (strlen(pCtx->sBinary) || strlen(pCtx->sIncludes))
+        if (xstrused(pCtx->sBinaryDst) || xstrused(pCtx->sHeaderDst))
         {
             xjson_obj_t *pInstallObj = XJSON_NewObject("install", XFALSE);
             if (pInstallObj != NULL)
             {
-                if (strlen(pCtx->sBinary)) XJSON_AddObject(pInstallObj, XJSON_NewString("binaryDir", pCtx->sBinary));
-                if (strlen(pCtx->sIncludes)) XJSON_AddObject(pInstallObj, XJSON_NewString("headerDir", pCtx->sIncludes));
+                if (xstrused(pCtx->sBinaryDst)) XJSON_AddObject(pInstallObj, XJSON_NewString("binaryDir", pCtx->sBinaryDst));
+                if (xstrused(pCtx->sHeaderDst)) XJSON_AddObject(pInstallObj, XJSON_NewString("headerDir", pCtx->sHeaderDst));
                 XJSON_AddObject(pRootObj, pInstallObj);
             }
         }

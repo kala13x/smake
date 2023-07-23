@@ -16,9 +16,13 @@
 extern "C" {
 #endif
 
-int SMake_ParseArgs(SMakeContext *pCtx, int argc, char *argv[]);
-int SMake_ParseConfig(SMakeContext *pCtx, const char *pPath);
-int SMake_WriteConfig(SMakeContext *pCtx, const char *pPath);
+xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize);
+xbool_t SMake_AddToArray(xarray_t *pArr, const char *pFmt, ...);
+xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput);
+
+int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[]);
+int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath);
+int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath);
 int SMake_GetLogFlags(uint8_t nVerbose);
 
 #ifdef __cplusplus

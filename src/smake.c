@@ -1,9 +1,10 @@
-/*
- *  src/smake.c
+/*!
+ *  @file smake/src/make.h
  *
- *  Copyleft (C) 2020  Sun Dro (a.k.a. kala13x)
- *
- * Main source file of project
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Main source file of project.
  */
 
 #include "stdinc.h"
@@ -13,56 +14,36 @@
 
 int main(int argc, char *argv[])
 {
-    xlog_init("smake", XLOG_ERROR | XLOG_WARN, 0);
+    xlog_defaults();
+    xlog_name("smake");
+    xlog_setfl(XLOG_ERROR | XLOG_WARN);
 
-    SMakeContext smakeCtx;
-    SMake_InitContext(&smakeCtx);
+    smake_ctx_t smake;
+    SMake_InitContext(&smake);
 
-    if (SMake_ParseArgs(&smakeCtx, argc, argv))
+    if (SMake_ParseArgs(&smake, argc, argv))
     {
-        SMake_ClearContext(&smakeCtx);
-        return -1;
+        SMake_ClearContext(&smake);
+        return XSTDERR;
     }
 
-    SMake_ParseConfig(&smakeCtx, SMAKE_CFG_FILE);
-    int nLogFlags = SMake_GetLogFlags(smakeCtx.nVerbose);
-    if (smakeCtx.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
+    SMake_ParseConfig(&smake, SMAKE_CFG_FILE);
+    int nLogFlags = SMake_GetLogFlags(smake.nVerbose);
+    if (smake.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
 
-    xlog_cfg_t logCfg;
-    xlog_get(&logCfg);
-    logCfg.nFlags = nLogFlags;
-    logCfg.bIndent = XTRUE;
-    xlog_set(&logCfg);
+    xlog_setfl(nLogFlags);
+    xlog_indent(XTRUE);
 
-    if (smakeCtx.nInit && !SMake_InitProject(&smakeCtx))
+    if ((smake.bIsInit && !SMake_InitProject(&smake)) ||
+        !SMake_LoadProjectFiles(&smake, smake.sPath) ||
+        !SMake_ParseProject(&smake) ||
+        !SMake_WriteMake(&smake))
     {
-        xloge("Failed to initialize project");
-        SMake_ClearContext(&smakeCtx);
-        return -1;
-    }
-
-    if (!SMake_LoadFiles(&smakeCtx, smakeCtx.sPath))
-    {
-        xloge("No input files found");
-        SMake_ClearContext(&smakeCtx);
-        return -1;
-    }
-
-    if (!SMake_ParseProject(&smakeCtx))
-    {
-        xloge("Can not load object list");
-        SMake_ClearContext(&smakeCtx);
-        return -1;
-    }
-
-    if (!SMake_WriteMake(&smakeCtx))
-    {
-        xloge("Failed to generate Makefile");
-        SMake_ClearContext(&smakeCtx);
-        return -1;
+        SMake_ClearContext(&smake);
+        return XSTDERR;
     }
     
-    xlogn("Successfuly generated Makefile");
-    SMake_ClearContext(&smakeCtx);
-    return 0;
+    xlogn("Successfuly generated Makefile.");
+    SMake_ClearContext(&smake);
+    return XSTDNON;
 }

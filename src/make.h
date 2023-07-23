@@ -1,9 +1,10 @@
-/*
- *  src/make.h
- * 
- *  Copyleft (C) 202-  Sun Dro (a.k.a. kala13x)
+/*!
+ *  @file smake/src/make.h
  *
- * Main works to prepare makefile.
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Analyze project and generate the Makefile.
  */
 
 #ifndef __SMAKE_MAKE_H__
@@ -35,37 +36,42 @@ typedef struct {
     int nType;
 } SMakeFile;
 
-typedef struct {
+typedef struct SMakeContext {
+    /* General info */
     char sCompiler[SMAKE_NAME_MAX];
-    char sIncludes[SMAKE_PATH_MAX];
+    char sHeaderDst[SMAKE_PATH_MAX];
+    char sBinaryDst[SMAKE_PATH_MAX];
     char sOutDir[SMAKE_PATH_MAX];
-    char sExcept[SMAKE_LINE_MAX];
     char sConfig[SMAKE_PATH_MAX];
-    char sBinary[SMAKE_PATH_MAX];
-    char sFlags[SMAKE_LINE_MAX];
-    char sLibs[SMAKE_LINE_MAX];
+    char sExcept[SMAKE_LINE_MAX];
     char sPath[SMAKE_PATH_MAX];
     char sName[SMAKE_NAME_MAX];
     char sMain[SMAKE_NAME_MAX];
-    uint8_t nOverwrite;
+
+    /* Flags */
+    xbool_t bOverwrite;
+    xbool_t bVPath;
+    xbool_t bIsCPP;
+    xbool_t bIsInit;
     uint8_t nVerbose;
-    uint8_t nVPath;
-    uint8_t nCPP;
-    uint8_t nInit;
+
+    /* Arrays */
     xarray_t fileArr;
+    xarray_t pathArr;
+    xarray_t flagArr;
+    xarray_t libArr;
     xarray_t incArr;
     xarray_t hdrArr;
     xarray_t objArr;
-    xarray_t vPaths;
-} SMakeContext;
+} smake_ctx_t;
 
-void SMake_InitContext(SMakeContext *pCtx);
-void SMake_ClearContext(SMakeContext *pCtx);
+void SMake_InitContext(smake_ctx_t *pCtx);
+void SMake_ClearContext(smake_ctx_t *pCtx);
 
-int SMake_LoadFiles(SMakeContext *pCtx, const char *pPath);
-int SMake_ParseProject(SMakeContext *pCtx);
-int SMake_InitProject(SMakeContext *pCtx);
-int SMake_WriteMake(SMakeContext *pCtx);
+xbool_t SMake_LoadProjectFiles(smake_ctx_t *pCtx, const char *pPath);
+xbool_t SMake_ParseProject(smake_ctx_t *pCtx);
+xbool_t SMake_InitProject(smake_ctx_t *pCtx);
+xbool_t SMake_WriteMake(smake_ctx_t *pCtx);
 
 #ifdef __cplusplus
 }
