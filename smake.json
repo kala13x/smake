@@ -4,14 +4,7 @@
         "outputDir": "./obj",
         "flags": "-g -O2 -Wall",
         "libs": "-lpthread",
-        "overwrite": true,
-        
-        "find":{
-            "libssl.so:libcrpto.so": {
-                "flags": "-D_XUTILS_USE_SSL",
-                "libs": "-lssl -lcrypto"
-            }
-        }
+        "overwrite": true
     },
     "install": {
         "binaryDir": "/usr/bin"
