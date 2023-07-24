@@ -55,7 +55,8 @@ smake -j \
     -o ./obj \
     -b /usr/bin \
     -e './xutils' \
-    -l './xutils/build/libxutils.a' \
+    -l '-lpthread' \
+    -L './xutils/build/libxutils.a' \
     -f '-g -O2 -Wall -I./src -I./xutils/build' \
 ```
 
@@ -68,6 +69,7 @@ Config file generated and used by this project.
         "name": "smake",
         "flags": "-g -O2 -Wall -I./src -I./xutils/build",
         "ldLibs": "./xutils/build/libxutils.a",
+        "libs": "-lpthread",
         "outputDir": "./obj",
         "overwrite": true,
         "cxx": false,

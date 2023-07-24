@@ -5,7 +5,7 @@
 
 CFLAGS = -g -O2 -Wall -I./src -I./xutils/build
 LD_LIBS = ./xutils/build/libxutils.a
-LIBS = 
+LIBS = -lpthread
 NAME = smake
 ODIR = ./obj
 OBJ = o

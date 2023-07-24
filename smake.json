@@ -8,6 +8,7 @@
         "overwrite": true,
         "outputDir": "./obj",
         "flags": "-g -O2 -Wall -I./src -I./xutils/build",
+        "libs": "-lpthread",
         "ldLibs": "./xutils/build/libxutils.a",
         "name": "smake",
         "excludes": [
