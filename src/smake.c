@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
 
     SMake_ParseConfig(&smake, SMAKE_CFG_FILE);
     int nLogFlags = SMake_GetLogFlags(smake.nVerbose);
-    if (smake.nVerbose) SMake_Greet(SMAKE_FULL_NAME);
 
     xlog_setfl(nLogFlags);
     xlog_indent(XTRUE);
