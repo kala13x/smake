@@ -105,12 +105,8 @@ xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput)
 
 int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
 {
-    char sFlags[SMAKE_LINE_MAX];
-    char sLibs[SMAKE_LINE_MAX];
-    sFlags[0] = sLibs[0] = XSTR_NUL;
-
     int nChar = 0;
-    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:I1:d1:w1:x1:h1")) != -1)
+    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:L:I1:d1:j1:w1:x1:h1")) != -1)
     {
         switch (nChar)
         {
@@ -125,23 +121,26 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
             case 'c':
                 xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), optarg);
                 break;
-            case 'e':
-                SMake_CopyPath(pCtx->sExcept, sizeof(pCtx->sExcept), optarg);
-                break;
             case 'b':
                 SMake_CopyPath(pCtx->sBinaryDst, sizeof(pCtx->sBinaryDst), optarg);
                 break;
             case 'i':
                 SMake_CopyPath(pCtx->sHeaderDst, sizeof(pCtx->sHeaderDst), optarg);
                 break;
-            case 'f':
-                xstrncpy(sFlags, sizeof(sFlags), optarg);
-                break;
             case 'g':
                 xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), optarg);
                 break;
+            case 'e':
+                SMake_AddTokens(&pCtx->excludes, ":", optarg);
+                break;
+            case 'f':
+                SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, optarg);
+                break;
             case 'l':
-                xstrncpy(sLibs, sizeof(sLibs), optarg);
+                SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, optarg);
+                break;
+            case 'L':
+                SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, optarg);
                 break;
             case 'p':
                 xstrncpy(pCtx->sName, sizeof(pCtx->sName), optarg);
@@ -158,6 +157,9 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
             case 'x':
                 pCtx->bIsCPP = XTRUE;
                 break;
+            case 'j':
+                pCtx->bWriteCfg = XTRUE;
+                break;
             case 'I':
                 pCtx->bInitProj = XTRUE;
                 break;
@@ -168,42 +170,21 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
         }
     }
 
-    if (xstrused(sFlags)) SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, sFlags);
-    if (xstrused(sLibs)) SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, sLibs);
-
     return 0;
-}
-
-static void SMake_MergeConf(char *pOld, const char *pNew, const char *pDlmt)
-{
-    char sNew[SMAKE_LINE_MAX];
-    char *pSavePtr = NULL;
-
-    xstrncpyf(sNew, sizeof(sNew), pNew);
-    char *pTok = strtok_r(sNew, pDlmt, &pSavePtr);
-
-    while (pTok != NULL)
-    {
-        if (strstr(pOld, pTok) == NULL)
-        {
-            if (strlen(pOld)) strcat(pOld, pDlmt);
-            strcat(pOld, pTok);
-        }
-
-        pTok = strtok_r(NULL, pDlmt, &pSavePtr);
-    }
 }
 
 int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 {
-    const char *pCfgPath = xstrused(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
-    size_t nSize = 0;
+    if (!xstrused(pCtx->sConfig))
+        xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), pPath);
 
-    char *pBuffer = (char*)XPath_Load(pCfgPath, &nSize);
+    size_t nSize = 0;
+    char *pBuffer = (char*)XPath_Load(pCtx->sConfig, &nSize);
+
     if (pBuffer == NULL)
     {
-        if (xstrused(pCtx->sConfig))
-            xloge("Failed to parse config: %s (%s)", pCfgPath, XSTRERR);
+        if (xstrused(pCtx->sConfig) && (!pCtx->bWriteCfg && !pCtx->bInitProj))
+            xloge("Failed to parse config: %s (%s)", pCtx->sConfig, XSTRERR);
 
         return 0;
     }
@@ -230,7 +211,11 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
             for (i = 0; i < nLength; i++)
             {
                 xjson_obj_t *pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
-                if (pValueObj != NULL) SMake_MergeConf(pCtx->sExcept, XJSON_GetString(pValueObj), ";");
+                if (pValueObj != NULL)
+                {
+                    const char *pExcludeStr = XJSON_GetString(pValueObj);
+                    SMake_AddToArray(&pCtx->excludes, "%s", pExcludeStr);
+                }
             }
         }
 
@@ -249,13 +234,24 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
                     smake_find_t finder;
                     finder.pFindStr = pPair->pKey;
 
+                    xjson_obj_t *pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "recursive");
+                    finder.bRecursive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XFALSE;
+
+                    pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "insensitive");
+                    finder.bInsensitive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XTRUE;
+
+                    pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "thisPathOnly");
+                    finder.bThisPathOnly = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XFALSE;
+
                     xjson_obj_t *pFlagsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "flags");
                     xjson_obj_t *pLibsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "libs");
                     xjson_obj_t *pPathObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "path");
+                    xjson_obj_t *pLdObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "ldLibs");
 
                     finder.pFlags = pFlagsObj != NULL ? XJSON_GetString(pFlagsObj) : NULL;
                     finder.pLibs = pLibsObj != NULL ? XJSON_GetString(pLibsObj) : NULL;
                     finder.pPath = pPathObj != NULL ? XJSON_GetString(pPathObj) : NULL;
+                    finder.pLd = pLdObj != NULL ? XJSON_GetString(pLdObj) : NULL;
                     SMake_FindLibs(pCtx, &finder);
                 }
 
@@ -275,6 +271,13 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
         {
             const char *pLibs = XJSON_GetString(pValueObj);
             SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, pLibs);
+        }
+
+        pValueObj = XJSON_GetObject(pBuildObj, "ldLibs");
+        if (pValueObj != NULL)
+        {
+            const char *pLd = XJSON_GetString(pValueObj);
+            SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, pLd);
         }
 
         pValueObj = XJSON_GetObject(pBuildObj, "name");
@@ -314,23 +317,11 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
     return 1;
 }
 
-static void SMake_WriteExcluded(xjson_obj_t *pArrObj, const char *pExcludes)
+int SMake_WriteConfig(smake_ctx_t *pCtx)
 {
-    char sExcludes[SMAKE_LINE_MAX];
-    char *pSavePtr = NULL;
+    XASSERT_RET((pCtx->bWriteCfg || pCtx->bInitProj), XSTDOK);
+    const char *pPath = xstrused(pCtx->sConfig) ? pCtx->sConfig : SMAKE_CFG_FILE;
 
-    xstrncpyf(sExcludes, sizeof(sExcludes), pExcludes);
-    char *pTok = strtok_r(sExcludes, ";", &pSavePtr);
-
-    while (pTok != NULL)
-    {
-        XJSON_AddObject(pArrObj, XJSON_NewString(NULL, pTok));
-        pTok = strtok_r(NULL, ";", &pSavePtr);
-    }
-}
-
-int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath)
-{
     xjson_obj_t *pRootObj = XJSON_NewObject(NULL, XFALSE);
     if (pRootObj != NULL)
     {
@@ -359,12 +350,29 @@ int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath)
                 XJSON_AddObject(pBuildObj, XJSON_NewString("libs", sLibs));
             }
 
-            if (xstrused(pCtx->sExcept))
+            if (XArray_Used(&pCtx->ldArr))
+            {
+                char sLd[XSTR_MID];
+                sLd[0] = XSTR_NUL;
+
+                SMake_SerializeArray(&pCtx->ldArr, XSTR_SPACE, sLd, sizeof(sLd));
+                XJSON_AddObject(pBuildObj, XJSON_NewString("ldLibs", sLd));
+            }
+
+            size_t i, nExcludes = XArray_Used(&pCtx->excludes);
+            if (nExcludes)
             {
                 xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes", XFALSE);
                 if (pExcludesArr != NULL)
                 {
-                    SMake_WriteExcluded(pExcludesArr, pCtx->sExcept);
+                    for (i = 0; i < nExcludes; i++)
+                    {
+                        const char *pExcl = (const char *)XArray_GetData(&pCtx->excludes, i);
+                        if (!xstrused(pExcl)) continue;
+
+                        XJSON_AddObject(pExcludesArr, XJSON_NewString(NULL, pExcl));
+                    }
+
                     XJSON_AddObject(pBuildObj, pExcludesArr);
                 }
             }
@@ -405,5 +413,5 @@ int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath)
     }
 
     XJSON_FreeObject(pRootObj);
-    return 1;
+    return XSTDOK;
 }

@@ -20,6 +20,7 @@ To use the `Makefile` generator you need to go into your project directory and t
 ```bash
   -f <'flags'>        # Compiler flags
   -l <'libs'>         # Linked libraries
+  -L <'libs'>         # Custom libraries (LD_LIBS)
   -b <path>           # Install destination for binary
   -c <path>           # Path to config file
   -e <paths>          # Exclude files or directories
@@ -27,6 +28,7 @@ To use the `Makefile` generator you need to go into your project directory and t
   -o <path>           # Object output destination
   -p <name>           # Program or library name
   -s <path>           # Path to source files
+  -j                  # Generate config file
   -I                  # Initialize project
   -d                  # Virtual directory
   -v                  # Verbosity level
@@ -49,8 +51,38 @@ smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 
 The `Makefile` of this project is generated with command:
 ```bash
-smake -b /usr/bin -o obj -f '-g -O2 -Wall'
+smake -j \
+    -o ./obj \
+    -b /usr/bin \
+    -e './xutils' \
+    -l './xutils/build/libxutils.a' \
+    -f '-g -O2 -Wall -I./src -I./xutils/build' \
 ```
+
+With argument `-j` it also generates the 'json' config file, which can be used in the future to avoid using command line arguments every time.
+
+Config file generated and used by this project.
+```
+    "build": {
+        "name": "smake",
+        "flags": "-g -O2 -Wall -I./src -I./xutils/build",
+        "ldLibs": "./xutils/build/libxutils.a",
+        "outputDir": "./obj",
+        "overwrite": true,
+        "cxx": false,
+        "verbose": 0,
+
+        "excludes": [
+            "./xutils",
+        ]
+    },
+
+    "install": {
+        "binaryDir": "/usr/bin"
+    }
+}
+```
+
 <p align="center">
     <img src="https://github.com/kala13x/smake/blob/master/smake.png" alt="alternate text">
 </p>
@@ -58,7 +90,7 @@ smake -b /usr/bin -o obj -f '-g -O2 -Wall'
 ### Config file
 Anything that can be passed as argument can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
 
-Example:
+Full Example:
 ```json
 {
     "build": {
@@ -86,6 +118,15 @@ Example:
             "libz.so": {
                 "flags": "-D_PROJ_USE_LIBZ",
                 "libs": "-lz"
+            },
+
+            "any_file.txt": {
+                "path": "/opt/examples/smake",
+                "flags": "-D_OPTIONAL_FLAGS",
+                "libs": "-loptional -lexample",
+                "thisPathOnly": true,
+                "insensitive": false,
+                "recursive": false
             }
         }
     },

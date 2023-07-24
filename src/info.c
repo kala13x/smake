@@ -30,9 +30,9 @@ const char* SMake_VersionShort()
 
 void SMake_Greet(const char *pName)
 {
-    printf("================================================\n");
-    printf("%s Version: %s\n", pName, SMake_Version());
-    printf("================================================\n");
+    printf("=============================================================================\n");
+    printf("%s Version: %s (email: s.kalatoz@gmail.com)\n", pName, SMake_Version());
+    printf("=============================================================================\n");
 }
 
 static char *WhiteSpace(const int nLength)
@@ -52,12 +52,13 @@ void SMake_Usage(const char *pName)
     SMake_Greet(SMAKE_FULL_NAME);
     int nLength = strlen(pName) + 6;
  
-    printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>]\n", pName);
-    printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>]\n", WhiteSpace(nLength));
-    printf(" %s [-p <name>] [-s <path>] [-I] [-d] [-v] [-w] [-x] [-h]\n", WhiteSpace(nLength));
+    printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>] [-I]\n", pName);
+    printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>] [-j] \n", WhiteSpace(nLength));
+    printf(" %s [-L <'libs'>] [-p <name>] [-s <path>] [-d] [-v] [-w] [-x] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
+    printf("  -L <'libs'>         # Custom libraries (LD_LIBS)\n");
     printf("  -b <path>           # Install destination for binary\n");
     printf("  -c <path>           # Specify path to config file\n");
     printf("  -e <paths>          # Exclude files or directories\n");
@@ -67,6 +68,7 @@ void SMake_Usage(const char *pName)
     printf("  -p <name>           # Program or library name\n");
     printf("  -s <path>           # Path to source files\n");
     printf("  -I                  # Initialize project\n");
+    printf("  -j                  # Generate smake.json\n");
     printf("  -d                  # Virtual directory\n");
     printf("  -v                  # Verbosity level\n");
     printf("  -w                  # Force overwrite output\n");

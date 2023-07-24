@@ -18,6 +18,10 @@ typedef struct SMakeFind {
     const char *pFlags;
     const char *pLibs;
     const char *pPath;
+    const char *pLd;
+    xbool_t bThisPathOnly;
+    xbool_t bInsensitive;
+    xbool_t bRecursive;
 } smake_find_t;
 
 XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind);

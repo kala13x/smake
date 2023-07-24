@@ -42,7 +42,6 @@ typedef struct SMakeContext {
     char sBinaryDst[SMAKE_PATH_MAX];
     char sOutDir[SMAKE_PATH_MAX];
     char sConfig[SMAKE_PATH_MAX];
-    char sExcept[SMAKE_LINE_MAX];
     char sPath[SMAKE_PATH_MAX];
     char sName[SMAKE_NAME_MAX];
     char sMain[SMAKE_NAME_MAX];
@@ -50,18 +49,20 @@ typedef struct SMakeContext {
     /* Flags */
     xbool_t bOverwrite;
     xbool_t bInitProj;
+    xbool_t bWriteCfg;
     xbool_t bVPath;
     xbool_t bIsCPP;
     uint8_t nVerbose;
 
     /* Arrays */
+    xarray_t excludes;
     xarray_t fileArr;
     xarray_t pathArr;
     xarray_t flagArr;
     xarray_t libArr;
-    xarray_t incArr;
     xarray_t hdrArr;
     xarray_t objArr;
+    xarray_t ldArr;
 } smake_ctx_t;
 
 void SMake_InitContext(smake_ctx_t *pCtx);

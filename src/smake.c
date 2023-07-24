@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
     if ((smake.bInitProj && !SMake_InitProject(&smake)) ||
         !SMake_LoadProjectFiles(&smake, smake.sPath) ||
         !SMake_ParseProject(&smake) ||
-        !SMake_WriteMake(&smake))
+        !SMake_WriteMake(&smake) ||
+        !SMake_WriteConfig(&smake))
     {
         SMake_ClearContext(&smake);
         return XSTDERR;

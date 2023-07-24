@@ -24,14 +24,14 @@ int SMake_SearchCb(xfile_search_t *pSearch, xfile_entry_t *pEntry, const char *p
     return XSTDOK;
 }
 
-static XSTATUS SMake_FindLibrary(const char *pLib, const char *pPath)
+static XSTATUS SMake_FindLibrary(const smake_find_t *pFind, const char *pLib, const char *pPath)
 {
     xfile_search_t search;
     XFile_SearchInit(&search, pLib);
 
     search.callback = SMake_SearchCb;
-    search.bInsensitive = XTRUE;
-    search.bRecursive = XTRUE;
+    search.bInsensitive = pFind->bInsensitive;
+    search.bRecursive = pFind->bRecursive;
 
     XFile_Search(&search, pPath);
     size_t nUsed = XArray_Used(&search.fileArray);
@@ -50,13 +50,14 @@ static XSTATUS SMake_FindLibrary(const char *pLib, const char *pPath)
     return nUsed ? XSTDOK : XSTDNON;
 }
 
-static XSTATUS SMake_FindLib(const char *pLib, const char *pCustomPath)
+static XSTATUS SMake_FindLib(const smake_find_t *pFind, const char *pLib)
 {
     XASSERT(pLib, XSTDINV);
     char sLDPath[XPATH_MAX];
 
-    if (!xstrused(pCustomPath)) xstrncpyf(sLDPath, sizeof(sLDPath), "%s", SMAKE_LIB_PATH);
-    else xstrncpyf(sLDPath, sizeof(sLDPath), "%s:%s", pCustomPath, SMAKE_LIB_PATH);
+    if (!xstrused(pFind->pPath)) xstrncpyf(sLDPath, sizeof(sLDPath), "%s", SMAKE_LIB_PATH);
+    else if (pFind->bThisPathOnly) xstrncpyf(sLDPath, sizeof(sLDPath), "%s", pFind->pPath);
+    else xstrncpyf(sLDPath, sizeof(sLDPath), "%s:%s", pFind->pPath, SMAKE_LIB_PATH);
 
     xarray_t *pPaths = xstrsplit(sLDPath, ":");
     XASSERT((pPaths && pPaths->nUsed), XSTDERR);
@@ -69,7 +70,7 @@ static XSTATUS SMake_FindLib(const char *pLib, const char *pCustomPath)
         const char *pPath = (const char*)XArray_GetData(pPaths, i);
         if (!xstrused(pPath)) continue;
 
-        nStatus = SMake_FindLibrary(pLib, pPath);
+        nStatus = SMake_FindLibrary(pFind, pLib, pPath);
         if (nStatus == XSTDOK) break;
     }
 
@@ -92,7 +93,7 @@ XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
         const char *pLib = (const char*)XArray_GetData(pLibs, i);
         if (!xstrused(pLib)) continue;
 
-        nStatus = SMake_FindLib(pLib, pFind->pPath);
+        nStatus = SMake_FindLib(pFind, pLib);
         if (nStatus != XSTDOK) break;
     }
 
@@ -103,6 +104,9 @@ XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
 
         if (xstrused(pFind->pLibs))
             SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, pFind->pLibs);
+
+        if (xstrused(pFind->pLd))
+            SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, pFind->pLd);
     }
 
     XArray_Destroy(pLibs);

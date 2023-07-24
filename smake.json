@@ -1,12 +1,17 @@
 {
-    "build": {
-        "name": "smake",
-        "outputDir": "./obj",
-        "flags": "-g -O2 -Wall",
-        "libs": "-lpthread",
-        "overwrite": true
-    },
     "install": {
         "binaryDir": "/usr/bin"
+    },
+    "build": {
+        "verbose": 0,
+        "cxx": false,
+        "overwrite": true,
+        "outputDir": "./obj",
+        "flags": "-g -O2 -Wall -I./src -I./xutils/build",
+        "ldLibs": "./xutils/build/libxutils.a",
+        "name": "smake",
+        "excludes": [
+            "./xutils"
+        ]
     }
 }

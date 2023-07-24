@@ -23,7 +23,7 @@ xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput);
 
 int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[]);
 int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath);
-int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath);
+int SMake_WriteConfig(smake_ctx_t *pCtx);
 int SMake_GetLogFlags(uint8_t nVerbose);
 
 #ifdef __cplusplus

@@ -3,18 +3,17 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -g -O2 -Wall
-CFLAGS += -I./src -I./xutils/build
+CFLAGS = -g -O2 -Wall -I./src -I./xutils/build
 LD_LIBS = ./xutils/build/libxutils.a
-LIBS = -lpthread
+LIBS = 
 NAME = smake
 ODIR = ./obj
 OBJ = o
 
 OBJS = cfg.$(OBJ) \
+	find.$(OBJ) \
 	info.$(OBJ) \
 	make.$(OBJ) \
-	find.$(OBJ) \
 	smake.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))
