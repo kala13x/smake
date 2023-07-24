@@ -64,7 +64,10 @@ xbool_t SMake_AddToArray(xarray_t *pArr, const char *pFmt, ...)
     for (i = 0; i < nCount; i++)
     {
         const char *pData = (const char*)XArray_GetData(pArr, i);
-        if (xstrused(pData) && !strncmp(pData, pDest, strlen(pData)))
+        if (!xstrused(pData)) continue;
+
+        if (strlen(pData) == nLength &&
+            !strncmp(pData, pDest, nLength))
         {
             free(pDest);
             return XTRUE;
