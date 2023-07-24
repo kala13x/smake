@@ -1,5 +1,5 @@
 /*!
- *  @file smake/src/make.h
+ *  @file smake/src/smake.c
  *
  *  This source is part of "smake" project
  *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 {
     xlog_defaults();
     xlog_name("smake");
-    xlog_setfl(XLOG_ERROR | XLOG_WARN);
+    xlog_setfl(XLOG_ERROR | XLOG_WARN | XLOG_NOTE);
 
     smake_ctx_t smake;
     SMake_InitContext(&smake);

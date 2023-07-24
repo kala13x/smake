@@ -1,9 +1,10 @@
-/*
- *  src/stdinc.h
- * 
- *  Copyleft (C) Sun Dro (a.k.a. kala13x)
+/*!
+ *  @file smake/src/stdinc.c
  *
- * Standart includes.
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Standarts and libxutils includes.
  */
 
 #ifndef __CMAKE_STDINC_H__
@@ -17,5 +18,6 @@
 #include "xutils/xlog.h"
 #include "xutils/xcli.h"
 #include "xutils/xfs.h"
+#include "xutils/map.h"
 
 #endif /* __CMAKE_STDINC_H__ */

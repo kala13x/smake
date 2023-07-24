@@ -14,6 +14,7 @@ OBJ = o
 OBJS = cfg.$(OBJ) \
 	info.$(OBJ) \
 	make.$(OBJ) \
+	find.$(OBJ) \
 	smake.$(OBJ)
 
 OBJECTS = $(patsubst %,$(ODIR)/%,$(OBJS))

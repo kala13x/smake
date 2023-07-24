@@ -5,13 +5,8 @@
 Use included scripts to build and clean the projct.
 
 ```bash
-git clone https://github.com/kala13x/smake.git
-cd smake
-
-./build.sh
-sudo make install
-
-./clean.sh
+git clone https://github.com/kala13x/smake.git --recursive
+cd smake && ./build.sh --install --cleanup
 ```
 
 ### Usage

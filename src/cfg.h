@@ -1,9 +1,10 @@
-/*
- *  src/cfg.h
- * 
- *  Copyleft (C) 2015  Sun Dro (a.k.a. kala13x)
+/*!
+ *  @file smake/src/cfg.h
  *
- * Functions for working with config files.
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Parse arguments and parse/generate config file.
  */
 
 #ifndef __SMAKE_CFG_H__

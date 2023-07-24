@@ -1,5 +1,5 @@
 /*!
- *  @file smake/src/make.h
+ *  @file smake/src/make.c
  *
  *  This source is part of "smake" project
  *  2020-2023  Sun Dro (s.kalatoz@gmail.com)

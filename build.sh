@@ -1,4 +1,5 @@
 #!/bin/bash
+./clean.sh
 
 PROJ_PATH=$(dirname $(readlink -f "$0"))
 CPU_COUNT=1
@@ -13,3 +14,13 @@ cd $PROJ_PATH/xutils && ./build.sh make && make install
 
 cd $PROJ_PATH
 make -j $CPU_COUNT
+
+for arg in "$@"; do
+    if [[ $arg == "--install" ]]; then
+        sudo make install
+    fi
+
+    if [[ $arg == "--cleanup" ]]; then
+        ./clean.sh
+    fi
+done

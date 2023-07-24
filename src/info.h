@@ -1,16 +1,17 @@
-/*
- *  src/info.h
+/*!
+ *  @file smake/src/info.h
  *
- *  Copyleft (C) 2020  Sun Dro (a.k.a. kala13x)
- *
- * Get additional information about project
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Get additional information about project.
  */
 
 #define SMAKE_FULL_NAME       "Simple-Make"
 
 #define SMAKE_VERSION_MAX     1
 #define SMAKE_VERSION_MIN     1
-#define SMAKE_BUILD_NUMBER    2
+#define SMAKE_BUILD_NUMBER    3
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_

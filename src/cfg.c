@@ -1,13 +1,14 @@
-/*
- *  src/cfg.c
- * 
- *  Copyleft (C) 2015  Sun Dro (a.k.a. kala13x)
+/*!
+ *  @file smake/src/cfg.c
  *
- * Functions for working with config files.
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Parse arguments and parse/generate config file.
  */
 
 #include "stdinc.h"
-#include "make.h"
+#include "find.h"
 #include "info.h"
 #include "cfg.h"
 
@@ -225,6 +226,33 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
             {
                 xjson_obj_t *pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
                 if (pValueObj != NULL) SMake_MergeConf(pCtx->sExcept, XJSON_GetString(pValueObj), ";");
+            }
+        }
+
+        xjson_obj_t *pFindObj = XJSON_GetObject(pBuildObj, "find");
+        if (pFindObj != NULL)
+        {
+            xarray_t *pObjects = XJSON_GetObjects(pFindObj);
+            if (pObjects != NULL)
+            {
+                size_t i, nUsed = XArray_Used(pObjects);
+                for (i = 0; i < nUsed; i++)
+                {
+                    xmap_pair_t *pPair = (xmap_pair_t*)XArray_GetData(pObjects, i);
+                    if (pPair == NULL || !xstrused(pPair->pKey)) continue;
+
+                    smake_find_t finder;
+                    finder.pFindStr = pPair->pKey;
+
+                    xjson_obj_t *pFlagsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "flags");
+                    xjson_obj_t *pLibsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "libs");
+
+                    finder.pFlags = pFlagsObj != NULL ? XJSON_GetString(pFlagsObj) : NULL;
+                    finder.pLibs = pLibsObj != NULL ? XJSON_GetString(pLibsObj) : NULL;
+                    SMake_FindLibs(pCtx, &finder);
+                }
+
+                XArray_Destroy(pObjects);
             }
         }
 

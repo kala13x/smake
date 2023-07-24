@@ -10,6 +10,15 @@
 #ifndef __SMAKE_FIND_H__
 #define __SMAKE_FIND_H__
 
-// TODO
+#include "stdinc.h"
+#include "make.h"
+
+typedef struct SMakeFind {
+    const char *pFindStr;
+    const char *pFlags;
+    const char *pLibs;
+} smake_find_t;
+
+XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind);
 
 #endif /* __SMAKE_FIND_H__ */

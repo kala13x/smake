@@ -1,9 +1,10 @@
-/*
- *  src/sver.c
+/*!
+ *  @file smake/src/info.c
  *
- *  Copyleft (C) 2016  Sun Dro (a.k.a. kala13x)
- *
- * Get additional information about project
+ *  This source is part of "smake" project
+ *  2020-2023  Sun Dro (s.kalatoz@gmail.com)
+ * 
+ * @brief Get additional information about project.
  */
 
 #include "stdinc.h"
