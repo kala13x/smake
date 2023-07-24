@@ -156,7 +156,7 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
                 pCtx->bIsCPP = XTRUE;
                 break;
             case 'I':
-                pCtx->bIsInit = XTRUE;
+                pCtx->bInitProj = XTRUE;
                 break;
             case 'h':
             default:
@@ -246,9 +246,11 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
                     xjson_obj_t *pFlagsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "flags");
                     xjson_obj_t *pLibsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "libs");
+                    xjson_obj_t *pPathObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "path");
 
                     finder.pFlags = pFlagsObj != NULL ? XJSON_GetString(pFlagsObj) : NULL;
                     finder.pLibs = pLibsObj != NULL ? XJSON_GetString(pLibsObj) : NULL;
+                    finder.pPath = pPathObj != NULL ? XJSON_GetString(pPathObj) : NULL;
                     SMake_FindLibs(pCtx, &finder);
                 }
 

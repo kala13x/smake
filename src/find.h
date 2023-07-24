@@ -17,6 +17,7 @@ typedef struct SMakeFind {
     const char *pFindStr;
     const char *pFlags;
     const char *pLibs;
+    const char *pPath;
 } smake_find_t;
 
 XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind);

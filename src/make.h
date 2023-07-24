@@ -50,9 +50,9 @@ typedef struct SMakeContext {
 
     /* Flags */
     xbool_t bOverwrite;
+    xbool_t bInitProj;
     xbool_t bVPath;
     xbool_t bIsCPP;
-    xbool_t bIsInit;
     uint8_t nVerbose;
 
     /* Arrays */

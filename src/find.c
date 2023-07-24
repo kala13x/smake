@@ -11,14 +11,12 @@
 #include "cfg.h"
 
 #define SMAKE_LIB_PATH \
-    "/lib" \
-    ":/lib64" \
-    ":/usr/lib" \
-    ":/usr/lib64" \
-    ":/usr/local/lib" \
-    ":/usr/local/lib64" \
-    ":/usr/local/ssl/lib" \
-    ":/usr/local/ssl/lib64" \
+    "/lib:" \
+    "/lib64:" \
+    "/usr/lib:" \
+    "/usr/lib64:" \
+    "/usr/local/lib:" \
+    "/usr/local/lib64"
 
 int SMake_SearchCb(xfile_search_t *pSearch, xfile_entry_t *pEntry, const char *pMsg)
 {
@@ -41,16 +39,26 @@ static XSTATUS SMake_FindLibrary(const char *pLib, const char *pPath)
     if (nUsed > 0)
     {
         xfile_entry_t *pFile = (xfile_entry_t*)XArray_GetData(&search.fileArray, 0);
-        if (pFile != NULL && xstrused(pFile->sPath)) xlogn("Found %s at: %s", pLib, pFile->sPath);
+        XASSERT((pFile != NULL) && xstrused(pFile->sPath), XSTDNON);
+
+        size_t nLentgh = strnlen(pFile->sPath, sizeof(pFile->sPath) - 1);
+        while (pFile->sPath[--nLentgh] == '/') pFile->sPath[nLentgh] = '\0';
+        xlogn("Found %s: %s/%s", pLib, pFile->sPath, pFile->sName);
     }
 
     XFile_SearchDestroy(&search);
     return nUsed ? XSTDOK : XSTDNON;
 }
 
-static XSTATUS SMake_FindLib(const char *pLib)
+static XSTATUS SMake_FindLib(const char *pLib, const char *pCustomPath)
 {
-    xarray_t *pPaths = xstrsplit(SMAKE_LIB_PATH, ":");
+    XASSERT(pLib, XSTDINV);
+    char sLDPath[XPATH_MAX];
+
+    if (!xstrused(pCustomPath)) xstrncpyf(sLDPath, sizeof(sLDPath), "%s", SMAKE_LIB_PATH);
+    else xstrncpyf(sLDPath, sizeof(sLDPath), "%s:%s", SMAKE_LIB_PATH, pCustomPath);
+
+    xarray_t *pPaths = xstrsplit(sLDPath, ":");
     XASSERT((pPaths && pPaths->nUsed), XSTDERR);
 
     size_t i, nUsed = XArray_Used(pPaths);
@@ -84,7 +92,7 @@ XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
         const char *pLib = (const char*)XArray_GetData(pLibs, i);
         if (!xstrused(pLib)) continue;
 
-        nStatus = SMake_FindLib(pLib);
+        nStatus = SMake_FindLib(pLib, pFind->pPath);
         if (nStatus != XSTDOK) break;
     }
 

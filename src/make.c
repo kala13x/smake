@@ -66,9 +66,9 @@ void SMake_InitContext(smake_ctx_t *pCtx)
     pCtx->sMain[0] = XSTR_NUL;
 
     pCtx->bOverwrite = XFALSE;
+    pCtx->bInitProj = XFALSE;
     pCtx->bVPath = XFALSE;
     pCtx->bIsCPP = XFALSE;
-    pCtx->bIsInit = XFALSE;
     pCtx->nVerbose = XSTDNON;
 }
 
