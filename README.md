@@ -63,6 +63,7 @@ With argument `-j` it also generates the 'json' config file, which can be used i
 
 Config file generated and used by this project.
 ```json
+{
     "build": {
         "name": "smake",
         "flags": "-g -O2 -Wall -I./src -I./xutils/build",
