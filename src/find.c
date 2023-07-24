@@ -56,7 +56,7 @@ static XSTATUS SMake_FindLib(const char *pLib, const char *pCustomPath)
     char sLDPath[XPATH_MAX];
 
     if (!xstrused(pCustomPath)) xstrncpyf(sLDPath, sizeof(sLDPath), "%s", SMAKE_LIB_PATH);
-    else xstrncpyf(sLDPath, sizeof(sLDPath), "%s:%s", SMAKE_LIB_PATH, pCustomPath);
+    else xstrncpyf(sLDPath, sizeof(sLDPath), "%s:%s", pCustomPath, SMAKE_LIB_PATH);
 
     xarray_t *pPaths = xstrsplit(sLDPath, ":");
     XASSERT((pPaths && pPaths->nUsed), XSTDERR);

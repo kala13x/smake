@@ -1,3 +1,7 @@
+[![MIT License](https://img.shields.io/badge/License-MIT-brightgreen.svg?)](https://github.com/kala13x/smake/blob/main/LICENSE)
+[![C/C++ CI](https://github.com/kala13x/smake/actions/workflows/make.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/make.yml)
+[![CodeQL](https://github.com/kala13x/smake/actions/workflows/codeql.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/codeql.yml)
+
 ## Simple-Make
 `SMake` is small and simple tool which helps developers to automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory. See the file `src/info.h` to check out what release version you have.
 
