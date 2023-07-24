@@ -34,7 +34,7 @@ int SMake_GetLogFlags(uint8_t nVerbose)
 xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize)
 {
     size_t nCount = XArray_Used(pArr);
-    size_t i, nAvail = nSize;
+    size_t i, nAvail = nSize - 1;
     xbool_t bStarted = XFALSE;
 
     for (i = 0; i < nCount; i++)
@@ -43,7 +43,7 @@ xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, s
         if (!xstrused(pData)) continue;
 
         if (!bStarted)  bStarted = XTRUE;
-        else if (pDlmt) nAvail = xstrncatf(pOutput, nAvail, pDlmt);
+        else if (pDlmt) nAvail = xstrncatf(pOutput, nAvail, "%s", pDlmt);
         nAvail = xstrncatf(pOutput, nAvail, "%s", pData);
     }
 
@@ -193,13 +193,15 @@ static void SMake_MergeConf(char *pOld, const char *pNew, const char *pDlmt)
 
 int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 {
-    const char *pCfgPath = strlen(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
+    const char *pCfgPath = xstrused(pCtx->sConfig) ? &pCtx->sConfig[0] : pPath;
     size_t nSize = 0;
 
     char *pBuffer = (char*)XPath_Load(pCfgPath, &nSize);
     if (pBuffer == NULL)
     {
-        xloge("Can not read file: %s (%s)", pCfgPath, XSTRERR);
+        if (xstrused(pCtx->sConfig))
+            xloge("Failed to parse config: %s (%s)", pCfgPath, XSTRERR);
+
         return 0;
     }
 
@@ -341,17 +343,17 @@ int SMake_WriteConfig(smake_ctx_t *pCtx, const char *pPath)
                 char sFlags[XSTR_MID];
                 sFlags[0] = XSTR_NUL;
 
-                SMake_SerializeArray(&pCtx->flagArr, XSTR_SPACE, sFlags, sizeof(&pCtx->flagArr));
+                SMake_SerializeArray(&pCtx->flagArr, XSTR_SPACE, sFlags, sizeof(sFlags));
                 XJSON_AddObject(pBuildObj, XJSON_NewString("flags", sFlags));
             }
 
             if (XArray_Used(&pCtx->libArr))
             {
-                char sFlags[XSTR_MID];
-                sFlags[0] = XSTR_NUL;
+                char sLibs[XSTR_MID];
+                sLibs[0] = XSTR_NUL;
 
-                SMake_SerializeArray(&pCtx->libArr, XSTR_SPACE, sFlags, sizeof(&pCtx->libArr));
-                XJSON_AddObject(pBuildObj, XJSON_NewString("libs", sFlags));
+                SMake_SerializeArray(&pCtx->libArr, XSTR_SPACE, sLibs, sizeof(sLibs));
+                XJSON_AddObject(pBuildObj, XJSON_NewString("libs", sLibs));
             }
 
             if (xstrused(pCtx->sExcept))
