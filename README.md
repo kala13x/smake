@@ -62,7 +62,7 @@ smake -j \
 With argument `-j` it also generates the 'json' config file, which can be used in the future to avoid using command line arguments every time.
 
 Config file generated and used by this project.
-```
+```json
     "build": {
         "name": "smake",
         "flags": "-g -O2 -Wall -I./src -I./xutils/build",
