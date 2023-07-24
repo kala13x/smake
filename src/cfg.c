@@ -235,7 +235,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
                     finder.pFindStr = pPair->pKey;
 
                     xjson_obj_t *pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "recursive");
-                    finder.bRecursive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XFALSE;
+                    finder.bRecursive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XTRUE;
 
                     pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "insensitive");
                     finder.bInsensitive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XTRUE;
