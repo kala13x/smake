@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 {
     xlog_defaults();
     xlog_name("smake");
+    xlog_indent(XTRUE);
     xlog_setfl(XLOG_ERROR | XLOG_WARN | XLOG_NOTE);
 
     smake_ctx_t smake;
@@ -28,10 +29,7 @@ int main(int argc, char *argv[])
     }
 
     SMake_ParseConfig(&smake, SMAKE_CFG_FILE);
-    int nLogFlags = SMake_GetLogFlags(smake.nVerbose);
-
-    xlog_setfl(nLogFlags);
-    xlog_indent(XTRUE);
+    xlog_setfl(SMake_GetLogFlags(smake.nVerbose));
 
     if ((smake.bIsInit && !SMake_InitProject(&smake)) ||
         !SMake_LoadProjectFiles(&smake, smake.sPath) ||
