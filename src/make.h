@@ -11,7 +11,6 @@
 #define __SMAKE_MAKE_H__
 
 #include "stdinc.h"
-#include "xjson.h"
 
 #define SMAKE_CFG_FILE "smake.json"
 #define SMAKE_PATH_MAX 4096
