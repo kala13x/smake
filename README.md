@@ -14,7 +14,7 @@ cd smake && ./build.sh --install --cleanup
 ```
 
 ### Usage
-To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you. 
+To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you.
 
 `SMake` also has some options to make your steps easier:
 ```bash
@@ -58,25 +58,41 @@ smake -b /usr/bin -o obj -f '-g -O2 -Wall'
 ### Config file
 Anything that can be passed as argument can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
 
-This example includes all supported parameters and all of them are optional:
+Example:
 ```json
 {
     "build": {
-        "name": "libxutils.a",
+        "name": "myproj.a",
         "outputDir": "./obj",
-        "flags": "-g -O2 -Wall -D_XSOCK_USE_SSL",
-        "libs": "-lpthread -lssl -lcrypto",
+        "flags": "-g -O2 -Wall",
+        "libs": "-lpthread",
         "compiler": "gcc",
         "overwrite": true,
         "verbose": 2,
         "cxx": false,
+
         "excludes": [
             "./examples"
-        ]
+            "./cmake"
+        ],
+
+        "find":{
+            "libssl.so:libcrypto.so": {
+                "path": "/usr/local/ssl/lib:/usr/local/ssl/lib64",
+                "flags": "-D_PROJ_USE_SSL",
+                "libs": "-lssl -lcrypto"
+            },
+
+            "libz.so": {
+                "flags": "-D_PROJ_USE_LIBZ",
+                "libs": "-lz"
+            }
+        }
     },
+
     "install": {
         "binaryDir": "/usr/lib",
-        "headerDir": "/usr/include/xutils"
+        "headerDir": "/usr/include/myproj"
     }
 }
 ```
