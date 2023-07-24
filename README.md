@@ -84,14 +84,9 @@ Config file generated and used by this project.
 }
 ```
 
-<p align="center">
-    <img src="https://github.com/kala13x/smake/blob/master/smake.png" alt="alternate text">
-</p>
-
-### Config file
 Anything that can be passed as argument can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
 
-Full Example:
+Example:
 ```json
 {
     "build": {
