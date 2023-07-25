@@ -175,6 +175,8 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
 
 int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 {
+    XASSERT_RET(!pCtx->bWriteCfg, XSTDOK);
+
     if (!xstrused(pCtx->sConfig))
         xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), pPath);
 
@@ -186,7 +188,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
         if (xstrused(pCtx->sConfig) && (!pCtx->bWriteCfg && !pCtx->bInitProj))
             xloge("Failed to parse config: %s (%s)", pCtx->sConfig, XSTRERR);
 
-        return 0;
+        return XSTDERR;
     }
 
     xjson_t json;
@@ -198,7 +200,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
         XJSON_Destroy(&json);
         free(pBuffer);
-        return 0;
+        return XSTDERR;
     }
 
     xjson_obj_t *pBuildObj = XJSON_GetObject(json.pRootObj, "build");
@@ -314,13 +316,28 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
     XJSON_Destroy(&json);
     free(pBuffer);
-    return 1;
+    return XSTDOK;
 }
 
 int SMake_WriteConfig(smake_ctx_t *pCtx)
 {
     XASSERT_RET((pCtx->bWriteCfg || pCtx->bInitProj), XSTDOK);
     const char *pPath = xstrused(pCtx->sConfig) ? pCtx->sConfig : SMAKE_CFG_FILE;
+
+    if (XPath_Exists(pPath) && !pCtx->bOverwrite)
+    {
+        xlogw("SMake config already exists: %s", pPath);
+
+        char sAnswer[8];
+        sAnswer[0] = '\0';
+
+        XCLI_GetInput("Would you like to owerwrite? (Y/N): ", sAnswer, sizeof(sAnswer), XTRUE);
+        if (!xstrused(sAnswer) || (sAnswer[0] != 'y' && sAnswer[0] != 'Y'))
+        {
+            xlogn("Stopping config file generation.");
+            return XSTDOK;
+        }
+    }
 
     xjson_obj_t *pRootObj = XJSON_NewObject(NULL, XFALSE);
     if (pRootObj != NULL)
@@ -398,20 +415,20 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
     xjson_writer_t linter;
     XJSON_InitWriter(&linter, NULL, 1); // Dynamic allocation
     linter.nTabSize = 4; // Enable linter and set tab size (4 spaces)
+    XSTATUS nStatus = XSTDOK;
 
     /* Dump objects directly */
     if (XJSON_WriteObject(pRootObj, &linter))
     {
-        FILE *pFile = fopen(pPath, "w");
-        if (pFile != NULL)
+        if (XPath_Write(pPath, "cwt", (const uint8_t*)linter.pData, linter.nLength) <= 0)
         {
-            fwrite(linter.pData, linter.nLength, 1, pFile);
-            fclose(pFile);
+            xloge("Failed to wite data: %s (%s)", pPath, XSTRERR);
+            nStatus = XSTDNON;
         }
 
         XJSON_DestroyWriter(&linter);
     }
 
     XJSON_FreeObject(pRootObj);
-    return XSTDOK;
+    return nStatus;
 }
