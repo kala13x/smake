@@ -136,5 +136,39 @@ Example:
 }
 ```
 
+As you can see in the example above, `find` json object can be used to find files and libraries in the system. Each entry in the find section is a key-value pair where the key is the file (or a colon-separated list of files) you want to locate and the value is another object describing how to handle the dependency.
+
+The keys in the nested objects describe how `smake` should handle each dependency:
+
+- `path` (optional): A colon-separated list of directories where `smake` should look for the files. If a file is found in these directories, the corresponding flags and libs will be applied.
+- `flags` (optional): Flags that should be added to the compiler command line if the file is found.
+- `libs` (optional): Libraries that should be linked to the executable if the file is found.
+- `thisPathOnly` (optional): If set to true, smake will only look for the file in the specified path and not in the default locations.
+- `insensitive` (optional): If set to true, the file search will be case-insensitive.
+- `recursive` (optional): If set to true, smake will search recursively in the directories specified by path.
+
+In the example above, if `smake` finds `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
+
+Without `path` and `thisPathOnly` options, `smake` will try to find the file or files in the following locations:
+
+- "/lib"
+- "/lib64"
+- "/usr/lib"
+- "/usr/lib64"
+- "/usr/local/lib"
+- "/usr/local/lib64"
+
+### Initialize the project
+```bash
+smake -I
+```
+When running the above command, `smake` will generate a "Hello, World!" project in the current working directory. The name of the project will be the same as the name of the current working directory. If you wish to provide a custom name for the executable, you can do so by passing the name as an argument using `-p`.
+
+Any remaining arguments can also be used to initialize the project, for example:
+```bash
+smake -I -l '-lpthread' -p test
+```
+The following command will create a compilable `test.c` file in the current working directory with "Hello, World!" content inside, a `Makefile` that compiles the project and links the `pthread` and the `smake.json` file that can be used to avoid CLI arguments in the future use of `smake`.
+
 ### Feel free to fork
 You can fork, modify and change the code unther the The MIT license. The project contains LICENSE file to see full license description.
