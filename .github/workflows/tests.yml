@@ -16,9 +16,11 @@ jobs:
         submodules: recursive
 
     - name: Install SMake
-      run: ./build.sh --install --cleanup
+      run: |
+        ./build.sh --install
+        make clean
 
-    - name: Re-install smake with using smake
+    - name: Re-install project using smake
       run: |
         smake && make
         sudo make install
