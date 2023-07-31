@@ -3,10 +3,10 @@
 [![CodeQL](https://github.com/kala13x/smake/actions/workflows/codeql.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/codeql.yml)
 
 ## Simple-Make
-`SMake` is small and simple tool which helps developers to automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory. See the file `src/info.h` to check out what release version you have.
+`SMake` is a simple tool that helps developers automatically generate `Makefile` for C/C++ projects by only typing `smake` in the project directory. See the file `src/info.h` to check out what release version you have.
 
 ### Installation
-Use included scripts to build and clean the projct.
+Use included scripts to build and clean the project.
 
 ```bash
 git clone https://github.com/kala13x/smake.git --recursive
@@ -16,40 +16,43 @@ cd smake && ./build.sh --install --cleanup
 ### Usage
 To use the `Makefile` generator you need to go into your project directory and type `smake`, it will automatically try to scan the project and generate the `Makefile` for you.
 
-`SMake` also has some options to make your steps easier:
-```bash
-  -f <'flags'>        # Compiler flags
-  -l <'libs'>         # Linked libraries
-  -L <'libs'>         # Custom libraries (LD_LIBS)
-  -b <path>           # Install destination for binary
-  -c <path>           # Path to config file
-  -e <paths>          # Exclude files or directories
-  -i <path>           # Install destination for includes
-  -o <path>           # Object output destination
-  -p <name>           # Program or library name
-  -s <path>           # Path to source files
-  -j                  # Generate config file
-  -I                  # Initialize project
-  -d                  # Virtual directory
-  -v                  # Verbosity level
-  -x                  # Use CPP compiler
-  -h                  # Print version and usage
-```
-For example, if your project requires `lrt` and `lpthread` linking and you need to compile it with `-Wall` flag, the command will be following:
+Here is a brief overview of all available command line arguments that `smake` supports:
+
+* `-f <'flags'>` - Specify compiler flags.
+* `-l <'libs'>` - Specify libraries to be linked with your program.
+* `-L <'libs'>` - Specify custom libraries (LD_LIBS).
+* `-c <path>` - Set the path to the config file.
+* `-b <path>` - Set the install destination for the binary.
+* `-i <path>` - Set the install destination for the includes.
+* `-e <path>` - Exclude specific files or directories.
+* `-o <path>` - Set the object output destination.
+* `-p <name>` - Set the program or library name.
+* `-s <path>` - Set the path to the source files.
+* `-j` - Generate a config file.
+* `-I` - Initialize a new project.
+* `-d` - Enable the use of a virtual directory.
+* `-v` - Adjust the verbosity level of the output.
+* `-x` - Use the CPP compiler.
+* `-h` - Print version and usage information.
+
+Each argument is optional and can be used in combination with others to suit your project's specific needs.\
+Please ensure you replace the placeholders (<'flags'>, <path>, etc.) with actual values relevant to your project.
+
+For example, if your project requires `lrt` and `lpthread` linking and you need to compile it with `-Wall` flag, the command will be the following:
 ```bash
 smake -f '-Wall' -l '-lrt -lpthread'
 ```
 
-With option `-p`, you can specify program name for your project, if you run smake without this argument, smake will scan your files to search main function and your program name will be that filename where `main()` is located.
+With option `-p`, you can specify program name for your project, if you run `smake` without this argument, smake will scan your files to search `main` function and your program name will be that filename where `main()` is located.
 
-Also if you specify program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
+Also if you specify the program name with `.a` or `.so` extensions (`smake -p example.so`), smake will generate `Makefile` to compile your project as the static or shared library.
 
-This is an example to generate `Makefile` for static library and specify install location for the library and headers:
+This is an example of generating `Makefile` for a static library and specifying the install location for the library and headers:
 ```bash
 smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 ```
 
-The `Makefile` of this project is generated with command:
+The `Makefile` of this project is generated with the command:
 ```bash
 smake -j \
     -o ./obj \
@@ -62,7 +65,7 @@ smake -j \
 
 With argument `-j` it also generates the 'json' config file, which can be used in the future to avoid using command line arguments every time.
 
-Config file generated and used by this project.
+The config file was generated and used by this project.
 ```json
 {
     "build": {
@@ -86,7 +89,7 @@ Config file generated and used by this project.
 }
 ```
 
-Anything that can be passed as argument can also be parsed from the config file. `SMake` will search config file at current working directory with name `smake.json` or you can specify path for the file with argument `-c`.
+Anything that can be passed as an argument can also be parsed from the config file. `SMake` will search the config file at a current working directory with the name `smake.json` or you can specify the path for the file with the argument `-c`.
 
 Example:
 ```json
@@ -136,7 +139,7 @@ Example:
 }
 ```
 
-As you can see in the example above, `find` json object can be used to find files and libraries in the system. Each entry in the find section is a key-value pair where the key is the file (or a colon-separated list of files) you want to locate and the value is another object describing how to handle the dependency.
+As you can see in the example above, `find` JSON object can be used to find files and libraries in the system. Each entry in the find section is a key-value pair where the key is the file (or a colon-separated list of files) you want to locate and the value is another object describing how to handle the dependency.
 
 The keys in the nested objects describe how `smake` should handle each dependency:
 
@@ -149,14 +152,14 @@ The keys in the nested objects describe how `smake` should handle each dependenc
 
 In the example above, `smake` will try to find `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
 
-Without `path` and `thisPathOnly` options, `smake` will try to find the files in the following locations:
+Without `thisPathOnly` option, `smake` will first look for files in the provided `path`. If not found there, it will search in the following default locations:
 
-- "/lib"
-- "/lib64"
-- "/usr/lib"
-- "/usr/lib64"
-- "/usr/local/lib"
-- "/usr/local/lib64"
+- `/lib`
+- `/lib64`
+- `/usr/lib`
+- `/usr/lib64`
+- `/usr/local/lib`
+- `/usr/local/lib64`
 
 ### Initialize the project
 ```bash
@@ -166,9 +169,9 @@ When running the above command, `smake` will generate a "Hello, World!" project 
 
 Any remaining arguments can also be used to initialize the project, for example:
 ```bash
-smake -I -l '-lpthread' -p test
+smake -I -f '-Wall' -p test
 ```
-The following command will create a compilable `test.c` file in the current working directory with "Hello, World!" content inside, a `Makefile` that compiles the project and links the `pthread` and the `smake.json` file that can be used to avoid CLI arguments in the future use of `smake`.
+The following command will create a compilable `test.c` file in the current working directory with "Hello, World!" content inside and a `Makefile` that compiles the project with `-Wall` flag.
 
 ### Feel free to fork
-You can fork, modify and change the code unther the The MIT license. The project contains LICENSE file to see full license description.
+You can fork, modify and change the code under the MIT license. The project contains a LICENSE file to see the full license description.
