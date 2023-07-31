@@ -149,7 +149,7 @@ The keys in the nested objects describe how `smake` should handle each dependenc
 
 In the example above, `smake` will try to find `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
 
-Without `thisPathOnly` option, smake will first look for files in the provided `path`. If not found there, it will search in the following default locations:
+Without `thisPathOnly` option, `smake` will first look for files in the provided `path`. If not found there, it will search in the following default locations:
 
 - `/lib`
 - `/lib64`
