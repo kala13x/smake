@@ -1,5 +1,6 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-brightgreen.svg?)](https://github.com/kala13x/smake/blob/main/LICENSE)
 [![C/C++ CI](https://github.com/kala13x/smake/actions/workflows/make.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/make.yml)
+[![SMake Tests](https://github.com/kala13x/smake/actions/workflows/tests.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/tests.yml)
 [![CodeQL](https://github.com/kala13x/smake/actions/workflows/codeql.yml/badge.svg)](https://github.com/kala13x/smake/actions/workflows/codeql.yml)
 
 ## Simple-Make
