@@ -147,9 +147,9 @@ The keys in the nested objects describe how `smake` should handle each dependenc
 - `insensitive` (optional): If set to true, the file search will be case-insensitive.
 - `recursive` (optional): If set to true, smake will search recursively in the directories specified by path.
 
-In the example above, if `smake` finds `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
+In the example above, `smake` will try to find `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
 
-Without `path` and `thisPathOnly` options, `smake` will try to find the file or files in the following locations:
+Without `path` and `thisPathOnly` options, `smake` will try to find the files in the following locations:
 
 - "/lib"
 - "/lib64"
