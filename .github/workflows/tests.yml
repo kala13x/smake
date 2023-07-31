@@ -1,0 +1,30 @@
+name: SMake Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install SMake
+      run: ./build.sh --install --cleanup
+
+    - name: Re-install smake with using smake
+      run: |
+        smake && make
+        sudo make install
+
+    - name: Generate new project and run
+      run: |
+        mkdir test 
+        cd test
+        smake -I
+        make
+        ./test
