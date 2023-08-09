@@ -31,6 +31,18 @@ int SMake_GetLogFlags(uint8_t nVerbose)
     return nLogFlags;
 }
 
+xbool_t SMake_IsExcluded(smake_ctx_t *pCtx, const char *pPath)
+{
+    size_t i, nExcludes = XArray_Used(&pCtx->excludes);
+    for (i = 0; i < nExcludes; i++)
+    {
+        const char *pExcl = (const char *)XArray_GetData(&pCtx->excludes, i);
+        if (xstrused(pExcl) && !strcmp(pExcl, pPath)) return XTRUE;
+    }
+
+    return XFALSE;
+}
+
 xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize)
 {
     size_t nCount = XArray_Used(pArr);
@@ -84,6 +96,76 @@ xbool_t SMake_AddToArray(xarray_t *pArr, const char *pFmt, ...)
     }
 
     pArrData->nSize = nLength + 1;
+    return XTRUE;
+}
+
+static xbool_t SMake_AddSourceFile(smake_ctx_t *pCtx, const char *pFullPath)
+{
+    if (SMake_IsExcluded(pCtx, pFullPath))
+    {
+        xlogi("Path is excluded: %s", pFullPath);
+        return XTRUE;
+    }
+
+    if (!XPath_Exists(pFullPath))
+    {
+        xloge("Failed to stat file: %s (%s)", pFullPath, XSTRERR);
+        return XFALSE;
+    }
+
+    int nLength = strlen(pFullPath);
+    int nType = SMake_GetFileType(pFullPath, nLength);
+
+    if (nType == SMAKE_FILE_UNF)
+    {
+        xloge("Invalid or unsupported file type: %s", pFullPath);
+        return XFALSE;
+    }
+
+    xpath_t path;
+    XPath_Parse(&path, pFullPath, XTRUE);
+
+    if (!xstrused(path.sPath) || !xstrused(path.sFile))
+    {
+        xloge("Failed to parse path: %s", pFullPath);
+        return XFALSE;
+    }
+
+    SMakeFile *pFile = SMake_FileNew(path.sPath, path.sFile, nType);
+    if (pFile == NULL) return XFALSE;
+
+    xlogd("Loading project file from config: %s/%s", pFile->sPath, pFile->sName);
+    int nStatus = XArray_AddData(&pCtx->fileArr, pFile, XSTDNON);
+    return nStatus >= 0 ? XTRUE : XFALSE;
+}
+
+static xbool_t SMake_AddIncludePath(smake_ctx_t *pCtx, const char *pFullPath)
+{
+    if (SMake_IsExcluded(pCtx, pFullPath))
+    {
+        xlogi("Path is excluded: %s", pFullPath);
+        return XTRUE;
+    }
+
+    if (!XPath_Exists(pFullPath))
+    {
+        xloge("Failed to stat path: %s (%s)", pFullPath, XSTRERR);
+        return XFALSE;
+    }
+
+    xpath_t path;
+    XPath_Parse(&path, pFullPath, XTRUE);
+
+    if (!xstrused(path.sPath))
+    {
+        xloge("Failed to parse path: %s", pFullPath);
+        return XFALSE;
+    }
+
+    xlogd("Using include path from the config: %s", path.sPath);
+    SMake_AddToArray(&pCtx->flagArr, "-I%s", path.sPath);
+    SMake_AddToArray(&pCtx->hdrArr, "%s", path.sPath);
+
     return XTRUE;
 }
 
@@ -166,19 +248,19 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
             case 'h':
             default:
                 SMake_Usage(argv[0]);
-                return -1;
+                return XFALSE;
         }
     }
 
-    return 0;
+    return XTRUE;
 }
 
-int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
+int SMake_ParseConfig(smake_ctx_t *pCtx)
 {
-    XASSERT_RET(!pCtx->bWriteCfg, XSTDOK);
+    XASSERT_RET(!pCtx->bWriteCfg, XTRUE);
 
-    if (!xstrused(pCtx->sConfig))
-        xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), pPath);
+    if (!xstrused(pCtx->sConfig) && XPath_Exists(SMAKE_CFG_FILE))
+        xstrncpy(pCtx->sConfig, sizeof(pCtx->sConfig), SMAKE_CFG_FILE);
 
     size_t nSize = 0;
     char *pBuffer = (char*)XPath_Load(pCtx->sConfig, &nSize);
@@ -186,9 +268,12 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
     if (pBuffer == NULL)
     {
         if (xstrused(pCtx->sConfig) && (!pCtx->bWriteCfg && !pCtx->bInitProj))
+        {
             xloge("Failed to parse config: %s (%s)", pCtx->sConfig, XSTRERR);
+            return XFALSE;
+        }
 
-        return XSTDERR;
+        return XTRUE;
     }
 
     xjson_t json;
@@ -200,19 +285,25 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
         XJSON_Destroy(&json);
         free(pBuffer);
-        return XSTDERR;
+        return XFALSE;
     }
 
     xjson_obj_t *pBuildObj = XJSON_GetObject(json.pRootObj, "build");
     if (pBuildObj != NULL)
     {
+        xjson_obj_t *pValueObj = XJSON_GetObject(pBuildObj, "verbose");
+        if (pValueObj != NULL && !pCtx->nVerbose) pCtx->nVerbose = XJSON_GetInt(pValueObj);
+
+        int nLogFlags = SMake_GetLogFlags(pCtx->nVerbose);
+        xlog_setfl(nLogFlags);
+
         xjson_obj_t *pExcludeArr = XJSON_GetObject(pBuildObj, "excludes");
         if (pExcludeArr != NULL)
         {
             size_t i, nLength = XJSON_GetArrayLength(pExcludeArr);
             for (i = 0; i < nLength; i++)
             {
-                xjson_obj_t *pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
+                pValueObj = XJSON_GetArrayItem(pExcludeArr, i);
                 if (pValueObj != NULL)
                 {
                     const char *pExcludeStr = XJSON_GetString(pValueObj);
@@ -261,7 +352,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
             }
         }
 
-        xjson_obj_t *pValueObj = XJSON_GetObject(pBuildObj, "flags");
+        pValueObj = XJSON_GetObject(pBuildObj, "flags");
         if (pValueObj != NULL)
         {
             const char *pFlags = XJSON_GetString(pValueObj);
@@ -291,9 +382,6 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
         pValueObj = XJSON_GetObject(pBuildObj, "compiler");
         if (pValueObj != NULL) xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), XJSON_GetString(pValueObj));
 
-        pValueObj = XJSON_GetObject(pBuildObj, "verbose");
-        if (pValueObj != NULL && !pCtx->nVerbose) pCtx->nVerbose = XJSON_GetInt(pValueObj);
-
         pValueObj = XJSON_GetObject(pBuildObj, "overwrite");
         if (pValueObj != NULL) pCtx->bOverwrite = XJSON_GetBool(pValueObj);
 
@@ -302,6 +390,48 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
         pValueObj = XJSON_GetObject(pBuildObj, "cxx");
         if (pValueObj != NULL) pCtx->bIsCPP = XJSON_GetBool(pValueObj);
+
+        xjson_obj_t *pSourceArr = XJSON_GetObject(pBuildObj, "sources");
+        if (pSourceArr != NULL)
+        {
+            pCtx->bSrcFromCfg = XTRUE;
+            size_t i, nLength = XJSON_GetArrayLength(pSourceArr);
+
+            for (i = 0; i < nLength; i++)
+            {
+                pValueObj = XJSON_GetArrayItem(pSourceArr, i);
+                if (pValueObj != NULL)
+                {
+                    const char *pSourceStr = XJSON_GetString(pValueObj);
+                    if (!SMake_AddSourceFile(pCtx, pSourceStr))
+                    {
+                        XJSON_Destroy(&json);
+                        free(pBuffer);
+                        return XFALSE;
+                    }
+                }
+            }
+        }
+
+        xjson_obj_t *pHeaderArr = XJSON_GetObject(pBuildObj, "includes");
+        if (pHeaderArr != NULL)
+        {
+            size_t i, nLength = XJSON_GetArrayLength(pHeaderArr);
+            for (i = 0; i < nLength; i++)
+            {
+                pValueObj = XJSON_GetArrayItem(pHeaderArr, i);
+                if (pValueObj != NULL)
+                {
+                    const char *pIncludePath = XJSON_GetString(pValueObj);
+                    if (!SMake_AddIncludePath(pCtx, pIncludePath))
+                    {
+                        XJSON_Destroy(&json);
+                        free(pBuffer);
+                        return XFALSE;
+                    }
+                }
+            }
+        }
     }
 
     xjson_obj_t *pInstallObj = XJSON_GetObject(json.pRootObj, "install");
@@ -316,7 +446,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx, const char *pPath)
 
     XJSON_Destroy(&json);
     free(pBuffer);
-    return XSTDOK;
+    return XTRUE;
 }
 
 int SMake_WriteConfig(smake_ctx_t *pCtx)

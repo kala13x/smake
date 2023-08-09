@@ -47,6 +47,7 @@ typedef struct SMakeContext {
     char sMain[SMAKE_NAME_MAX];
 
     /* Flags */
+    xbool_t bSrcFromCfg;
     xbool_t bOverwrite;
     xbool_t bInitProj;
     xbool_t bWriteCfg;
@@ -65,10 +66,13 @@ typedef struct SMakeContext {
     xarray_t ldArr;
 } smake_ctx_t;
 
+SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType);
+int SMake_GetFileType(const char *pPath, int nLen);
+
 void SMake_InitContext(smake_ctx_t *pCtx);
 void SMake_ClearContext(smake_ctx_t *pCtx);
 
-xbool_t SMake_LoadProjectFiles(smake_ctx_t *pCtx, const char *pPath);
+xbool_t SMake_LoadFiles(smake_ctx_t *pCtx, const char *pPath);
 xbool_t SMake_ParseProject(smake_ctx_t *pCtx);
 xbool_t SMake_InitProject(smake_ctx_t *pCtx);
 xbool_t SMake_WriteMake(smake_ctx_t *pCtx);

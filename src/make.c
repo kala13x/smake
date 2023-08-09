@@ -68,6 +68,7 @@ void SMake_InitContext(smake_ctx_t *pCtx)
     pCtx->sName[0] = XSTR_NUL;
     pCtx->sMain[0] = XSTR_NUL;
 
+    pCtx->bSrcFromCfg = XFALSE;
     pCtx->bOverwrite = XFALSE;
     pCtx->bInitProj = XFALSE;
     pCtx->bWriteCfg = XFALSE;
@@ -98,30 +99,27 @@ int SMake_GetFileType(const char *pPath, int nLen)
     return SMAKE_FILE_UNF;
 }
 
-static xbool_t SMake_IsExcluded(smake_ctx_t *pCtx, const char *pPath)
+xbool_t SMake_LoadFiles(smake_ctx_t *pCtx, const char *pPath)
 {
-    size_t i, nExcludes = XArray_Used(&pCtx->excludes);
-    for (i = 0; i < nExcludes; i++)
+    const char *pFilePath = pPath ? pPath : pCtx->sPath;
+
+    if (pCtx->bSrcFromCfg)
     {
-        const char *pExcl = (const char *)XArray_GetData(&pCtx->excludes, i);
-        if (xstrused(pExcl) && !strcmp(pExcl, pPath)) return XTRUE;
+        size_t nUsed = XArray_Used(&pCtx->fileArr);
+        xlogd("Using %zu source files from config.", nUsed);
+        return nUsed ? XTRUE : XFALSE;
     }
 
-    return XFALSE;
-}
-
-xbool_t SMake_LoadProjectFiles(smake_ctx_t *pCtx, const char *pPath)
-{
-    if (SMake_IsExcluded(pCtx, pPath))
+    if (SMake_IsExcluded(pCtx, pFilePath))
     {
-        xlogi("Path is excluded: %s", pPath);
+        xlogi("Path is excluded: %s", pFilePath);
         return XFALSE;
     }
 
     xdir_t dir;
-    if (XDir_Open(&dir, pPath) < 0)
+    if (XDir_Open(&dir, pFilePath) < 0)
     {
-        xloge("Failed to open directory: %s (%s)", pPath, XSTRERR);
+        xloge("Failed to open directory: %s (%s)", pFilePath, XSTRERR);
         return XFALSE;
     }
 
@@ -129,7 +127,7 @@ xbool_t SMake_LoadProjectFiles(smake_ctx_t *pCtx, const char *pPath)
     while(XDir_Read(&dir, sFileName, sizeof(sFileName)) > 0)
     {
         char sFullPath[SMAKE_PATH_MAX + SMAKE_NAME_MAX];
-        int nBytes = xstrncpyf(sFullPath, sizeof(sFullPath), "%s/%s", pPath, sFileName);
+        int nBytes = xstrncpyf(sFullPath, sizeof(sFullPath), "%s/%s", pFilePath, sFileName);
         if (nBytes <= 0) continue;
 
         if (SMake_IsExcluded(pCtx, sFullPath))
@@ -143,14 +141,14 @@ xbool_t SMake_LoadProjectFiles(smake_ctx_t *pCtx, const char *pPath)
 
         if (!bIsDir && nType != SMAKE_FILE_UNF)
         {
-            SMakeFile *pFile = SMake_FileNew(pPath, sFileName, nType);
+            SMakeFile *pFile = SMake_FileNew(pFilePath, sFileName, nType);
             if (pFile == NULL) return XFALSE;
 
             xlogd("Found project file: %s", sFullPath);
             XArray_AddData(&pCtx->fileArr, pFile, XSTDNON);
         }
 
-        if (bIsDir) SMake_LoadProjectFiles(pCtx, sFullPath);
+        if (bIsDir) SMake_LoadFiles(pCtx, sFullPath);
     }
 
     XDir_Close(&dir);
@@ -274,6 +272,8 @@ xbool_t SMake_ParseProject(smake_ctx_t *pCtx)
 
 xbool_t SMake_InitProject(smake_ctx_t *pCtx)
 {
+    if (!pCtx->bInitProj) return XSTDOK;
+
     if (!xstrused(pCtx->sName))
     {
         char sPwd[SMAKE_NAME_MAX];

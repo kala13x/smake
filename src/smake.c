@@ -21,17 +21,10 @@ int main(int argc, char *argv[])
     smake_ctx_t smake;
     SMake_InitContext(&smake);
 
-    if (SMake_ParseArgs(&smake, argc, argv))
-    {
-        SMake_ClearContext(&smake);
-        return XSTDERR;
-    }
-
-    SMake_ParseConfig(&smake, SMAKE_CFG_FILE);
-    xlog_setfl(SMake_GetLogFlags(smake.nVerbose));
-
-    if ((smake.bInitProj && !SMake_InitProject(&smake)) ||
-        !SMake_LoadProjectFiles(&smake, smake.sPath) ||
+    if (!SMake_ParseArgs(&smake, argc, argv) ||
+        !SMake_ParseConfig(&smake) ||
+        !SMake_InitProject(&smake) ||
+        !SMake_LoadFiles(&smake, NULL) ||
         !SMake_ParseProject(&smake) ||
         !SMake_WriteMake(&smake) ||
         !SMake_WriteConfig(&smake))
@@ -39,7 +32,7 @@ int main(int argc, char *argv[])
         SMake_ClearContext(&smake);
         return XSTDERR;
     }
-    
+
     xlogn("Successfuly generated Makefile.");
     SMake_ClearContext(&smake);
     return XSTDNON;
