@@ -7,7 +7,7 @@
         "cxx": false,
         "overwrite": true,
         "outputDir": "./obj",
-        "flags": "-g -O2 -Wall -I./src -I./xutils/build",
+        "flags": "-g -O2 -Wall -I./src -I./xutils/build/include",
         "ldLibs": "./xutils/build/lib/libxutils.a",
         "libs": "-lpthread",
         "name": "smake",

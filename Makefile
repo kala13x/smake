@@ -3,8 +3,8 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -g -O2 -Wall -I./src -I./xutils/build
-LD_LIBS = ./xutils/build/libxutils.a
+CFLAGS = -g -O2 -Wall -I./src -I./xutils/build/include
+LD_LIBS = ./xutils/build/lib/libxutils.a
 LIBS = -lpthread
 NAME = smake
 ODIR = ./obj
