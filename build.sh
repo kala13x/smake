@@ -8,9 +8,8 @@ if [ $OSTYPE == linux-gnu ]; then
     CPU_COUNT=$(nproc)
 fi
 
-cp $PROJ_PATH/misc/smake.xutils $PROJ_PATH/xutils/smake.json
-cp $PROJ_PATH/misc/make.xutils $PROJ_PATH/xutils/Makefile
-cd $PROJ_PATH/xutils && make -j $CPU_COUNT && make install
+cp $PROJ_PATH/misc/xutils.conf $PROJ_PATH/xutils/xutils.conf
+cd $PROJ_PATH/xutils && ./build.sh make --prefix="./build" --ssl=no && make install
 
 cd $PROJ_PATH
 make -j $CPU_COUNT
