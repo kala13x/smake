@@ -4,7 +4,7 @@
         "libs": "-lpthread",
         "ldLibs": "./xutils/build/lib/libxutils.a",
         "outputDir": "./obj",
-        "overwrite": false,
+        "overwrite": true,
         "name": "smake",
         "cxx": false,
         "verbose": 0,

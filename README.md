@@ -55,7 +55,7 @@ smake -p mylib.a -l '-lpthread' -b /usr/lib -i /usr/include
 
 The `Makefile` of this project is generated with the command:
 ```bash
-smake -j \
+smake -jw \
     -o ./obj \
     -b /usr/bin \
     -e './xutils' \
@@ -74,7 +74,7 @@ The config file was generated and used by this project.
         "libs": "-lpthread",
         "ldLibs": "./xutils/build/lib/libxutils.a",
         "outputDir": "./obj",
-        "overwrite": false,
+        "overwrite": true,
         "name": "smake",
         "cxx": false,
         "verbose": 0,
