@@ -9,7 +9,7 @@ if [ $OSTYPE == linux-gnu ]; then
 fi
 
 cp $PROJ_PATH/misc/xutils.conf $PROJ_PATH/xutils/xutils.conf
-cd $PROJ_PATH/xutils && ./build.sh make --prefix="./build" --ssl=no && make install
+cd $PROJ_PATH/xutils && ./build.sh --prefix="./build" --ssl=no && make install
 
 cd $PROJ_PATH
 make -j $CPU_COUNT
