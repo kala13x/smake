@@ -40,22 +40,22 @@ SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
 
 void SMake_InitContext(smake_ctx_t *pCtx) 
 {
+    XArray_Init(&pCtx->includes, XSTDNON, XFALSE);
     XArray_Init(&pCtx->excludes, XSTDNON, XFALSE);
     XArray_Init(&pCtx->fileArr, XSTDNON, XFALSE);
     XArray_Init(&pCtx->pathArr, XSTDNON, XFALSE);
     XArray_Init(&pCtx->flagArr, XSTDNON, XFALSE);
     XArray_Init(&pCtx->libArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->hdrArr, XSTDNON, XFALSE);
     XArray_Init(&pCtx->objArr, XSTDNON, XFALSE);
     XArray_Init(&pCtx->ldArr, XSTDNON, XFALSE);
 
+    pCtx->includes.clearCb = SMake_ClearCallback;
     pCtx->excludes.clearCb = SMake_ClearCallback;
     pCtx->pathArr.clearCb = SMake_ClearCallback;
     pCtx->fileArr.clearCb = SMake_ClearCallback;
     pCtx->flagArr.clearCb = SMake_ClearCallback;
     pCtx->libArr.clearCb = SMake_ClearCallback;
     pCtx->objArr.clearCb = SMake_ClearCallback;
-    pCtx->hdrArr.clearCb = SMake_ClearCallback;
     pCtx->ldArr.clearCb = SMake_ClearCallback;
 
     pCtx->sPath[0] = pCtx->sOutDir[0] = '.';
@@ -79,13 +79,13 @@ void SMake_InitContext(smake_ctx_t *pCtx)
 
 void SMake_ClearContext(smake_ctx_t *pCtx)
 {
+    XArray_Destroy(&pCtx->includes);
     XArray_Destroy(&pCtx->excludes);
     XArray_Destroy(&pCtx->fileArr);
     XArray_Destroy(&pCtx->pathArr);
     XArray_Destroy(&pCtx->flagArr);
     XArray_Destroy(&pCtx->libArr);
     XArray_Destroy(&pCtx->objArr);
-    XArray_Destroy(&pCtx->hdrArr);
     XArray_Destroy(&pCtx->ldArr);
 }
 
@@ -230,8 +230,7 @@ xbool_t SMake_ParseProject(smake_ctx_t *pCtx)
             else if (pFile->nType == SMAKE_FILE_H || 
                      pFile->nType == SMAKE_FILE_HPP)
             {
-                SMake_AddToArray(&pCtx->flagArr, "-I%s", pFile->sPath);
-                SMake_AddToArray(&pCtx->hdrArr, "%s", pFile->sPath);
+                SMake_AddToArray(&pCtx->includes, "%s", pFile->sPath);
                 continue;
             }
 
@@ -397,10 +396,12 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     const char *pCompiler = pCtx->bIsCPP ? "CXX" : "CC";
     const char *pCFlags = pCtx->bIsCPP ? "CXXFLAGS" : "CFLAGS";
 
+    char sIncludes[SMAKE_LINE_MAX];
     char sFlags[SMAKE_LINE_MAX];
     char sLibs[SMAKE_LINE_MAX];
     char sLd[SMAKE_LINE_MAX];
 
+    sIncludes[0] = XSTR_NUL;
     sFlags[0] = XSTR_NUL;
     sLibs[0] = XSTR_NUL;
     sLd[0] = XSTR_NUL;
@@ -414,11 +415,16 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     if (strstr(pCtx->sName, ".a") != NULL) bStatic = XTRUE;
     else if (strstr(pCtx->sName, ".so") != NULL) bShared = XTRUE;
 
+    SMake_SerializeIncludes(&pCtx->includes, XSTR_SPACE, sIncludes, sizeof(sIncludes));
     SMake_SerializeArray(&pCtx->flagArr, XSTR_SPACE, sFlags, sizeof(sFlags));
     SMake_SerializeArray(&pCtx->libArr, XSTR_SPACE, sLibs, sizeof(sLibs));
     SMake_SerializeArray(&pCtx->ldArr, XSTR_SPACE, sLd, sizeof(sLd));
 
-    XFile_Print(&file, "%s = %s\n", pCFlags, sFlags);
+    if (xstrused(sFlags)) XFile_Print(&file, "%s = %s\n", pCFlags, sFlags);
+    else if (xstrused(sIncludes)) XFile_Print(&file, "%s = %s\n", pCFlags, sIncludes);
+    if (xstrused(sFlags) && xstrused(sIncludes)) XFile_Print(&file, "%s += %s\n", pCFlags, sIncludes);
+
+    xbool_t bLDLibs = xstrused(sLd);
     if (xstrused(sLd)) XFile_Print(&file, "LD_LIBS = %s\n", sLd);
 
     XFile_Print(&file, "LIBS = %s\n", sLibs);
@@ -427,7 +433,7 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     XFile_Print(&file, "OBJ = o\n\n");
     XFile_Print(&file, "OBJS = ");
 
-    xlogi("Compiler flags: %s", sFlags);
+    xlogi("Compiler flags: %s %s", sFlags, sIncludes);
     xlogi("Linked libraries: %s", sLibs);
     xlogi("Custom libraries: %s", sLd);
     xlogi("Binary file name: %s", pCtx->sName);
@@ -457,24 +463,24 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     XArray_Sort(&pCtx->pathArr, SMake_CompareLen, NULL);
     SMake_SerializeArray(&pCtx->pathArr, ":", sVPath, sizeof(sVPath));
 
-    xbool_t bInstallBinary = xstrused(pCtx->sBinaryDst);
+    const char *pFPICOption = bShared ? "-fPIC" : XSTR_EMPTY;
     xbool_t bInstallIncludes = xstrused(pCtx->sHeaderDst);
+    xbool_t bInstallBinary = xstrused(pCtx->sBinaryDst);
     int bVPathLen = strlen(sVPath);
 
     XFile_Print(&file, "OBJECTS = $(patsubst %%,$(ODIR)/%%,$(OBJS))\n");
-    if (bInstallBinary) XFile_Print(&file, "INSTALL_BIN = %s\n", pCtx->sBinaryDst);
     if (bInstallIncludes) XFile_Print(&file, "INSTALL_INC = %s\n", pCtx->sHeaderDst);
+    if (bInstallBinary) XFile_Print(&file, "INSTALL_BIN = %s\n", pCtx->sBinaryDst);
     if (pCtx->bVPath || bVPathLen) XFile_Print(&file, "VPATH = %s\n", sVPath);
 
     XFile_Print(&file, "\n.%s.$(OBJ):\n", pCtx->bIsCPP ? "cpp" : "c");
     XFile_Print(&file, "\t@test -d $(ODIR) || mkdir -p $(ODIR)\n");
-    XFile_Print(&file, "\t$(%s) $(%s)%s-c -o $(ODIR)/$@ $< $(LIBS)\n\n", 
-        pCompiler, pCFlags, bShared ? " -fPIC " : " ");
+    XFile_Print(&file, "\t$(%s) $(%s) %s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
     XFile_Print(&file, "$(NAME):$(OBJS)\n");
 
     if (bStatic) XFile_Print(&file, "\t$(AR) rcs -o $(ODIR)/$(NAME) $(OBJECTS)\n");
     else if (bShared) XFile_Print(&file, "\t$(%s) -shared -o $(ODIR)/$(NAME) $(OBJECTS)\n", pCompiler);
-    else if (!xstrused(sLd)) XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
+    else if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
     else XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
 
     if (bInstallBinary || bInstallIncludes)
@@ -491,11 +497,11 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
         if (bInstallIncludes)
         {
             XFile_Print(&file, "\t@test -d $(INSTALL_INC) || mkdir -p $(INSTALL_INC)\n");
-            size_t nCount = XArray_Used(&pCtx->hdrArr);
+            size_t nCount = XArray_Used(&pCtx->includes);
 
             for (i = 0; i < nCount; i++)
             {
-                const char *pPath = (const char*)XArray_GetData(&pCtx->hdrArr, i);
+                const char *pPath = (const char*)XArray_GetData(&pCtx->includes, i);
                 if (pPath != NULL)
                 {
                     xlogi("Install location for headers: %s -> %s", pPath, pCtx->sHeaderDst);

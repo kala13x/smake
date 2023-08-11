@@ -17,7 +17,9 @@
 extern "C" {
 #endif
 
+xbool_t SMake_SerializeIncludes(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize);
 xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize);
+
 xbool_t SMake_AddToArray(xarray_t *pArr, const char *pFmt, ...);
 xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput);
 xbool_t SMake_IsExcluded(smake_ctx_t *pCtx, const char *pPath);

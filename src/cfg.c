@@ -43,6 +43,25 @@ xbool_t SMake_IsExcluded(smake_ctx_t *pCtx, const char *pPath)
     return XFALSE;
 }
 
+xbool_t SMake_SerializeIncludes(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize)
+{
+    size_t nCount = XArray_Used(pArr);
+    size_t i, nAvail = nSize - 1;
+    xbool_t bStarted = XFALSE;
+
+    for (i = 0; i < nCount; i++)
+    {
+        const char *pData = (const char*)XArray_GetData(pArr, i);
+        if (!xstrused(pData)) continue;
+
+        if (!bStarted)  bStarted = XTRUE;
+        else if (pDlmt) nAvail = xstrncatf(pOutput, nAvail, "%s", pDlmt);
+        nAvail = xstrncatf(pOutput, nAvail, "-I%s", pData);
+    }
+
+    return bStarted;
+}
+
 xbool_t SMake_SerializeArray(xarray_t *pArr, const char *pDlmt, char *pOutput, size_t nSize)
 {
     size_t nCount = XArray_Used(pArr);
@@ -163,8 +182,7 @@ static xbool_t SMake_AddIncludePath(smake_ctx_t *pCtx, const char *pFullPath)
     }
 
     xlogd("Using include path from the config: %s", path.sPath);
-    SMake_AddToArray(&pCtx->flagArr, "-I%s", path.sPath);
-    SMake_AddToArray(&pCtx->hdrArr, "%s", path.sPath);
+    SMake_AddToArray(&pCtx->includes, "%s", path.sPath);
 
     return XTRUE;
 }
@@ -506,7 +524,25 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                 XJSON_AddObject(pBuildObj, XJSON_NewString("ldLibs", sLd));
             }
 
-            size_t i, nExcludes = XArray_Used(&pCtx->excludes);
+            size_t i, nIncludes = XArray_Used(&pCtx->includes);
+            if (nIncludes)
+            {
+                xjson_obj_t *pIncludesArr = XJSON_NewArray("includes", XFALSE);
+                if (pIncludesArr != NULL)
+                {
+                    for (i = 0; i < nIncludes; i++)
+                    {
+                        const char *pIncl = (const char *)XArray_GetData(&pCtx->includes, i);
+                        if (!xstrused(pIncl)) continue;
+
+                        XJSON_AddObject(pIncludesArr, XJSON_NewString(NULL, pIncl));
+                    }
+
+                    XJSON_AddObject(pBuildObj, pIncludesArr);
+                }
+            }
+
+            size_t nExcludes = XArray_Used(&pCtx->excludes);
             if (nExcludes)
             {
                 xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes", XFALSE);

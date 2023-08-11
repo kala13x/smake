@@ -56,12 +56,12 @@ typedef struct SMakeContext {
     uint8_t nVerbose;
 
     /* Arrays */
+    xarray_t includes;
     xarray_t excludes;
     xarray_t fileArr;
     xarray_t pathArr;
     xarray_t flagArr;
     xarray_t libArr;
-    xarray_t hdrArr;
     xarray_t objArr;
     xarray_t ldArr;
 } smake_ctx_t;
