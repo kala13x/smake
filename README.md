@@ -64,7 +64,7 @@ smake -j \
     -f '-g -O2 -Wall -I./xutils/build/include' \
 ```
 
-With argument `-j` it also generates the 'json' config file, which can be used in the future to avoid using command line arguments every time.
+With argument `-j` it also generates the `json` config file, which can be used in the future to avoid using command line arguments every time.
 
 The config file was generated and used by this project.
 ```json
@@ -115,7 +115,7 @@ Example:
             "./cmake"
         ],
 
-        "find":{
+        "find": {
             "libssl.so:libcrypto.so": {
                 "path": "/usr/local/ssl/lib:/usr/local/ssl/lib64",
                 "flags": "-D_PROJ_USE_SSL",
