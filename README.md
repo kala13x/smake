@@ -60,8 +60,8 @@ smake -j \
     -b /usr/bin \
     -e './xutils' \
     -l '-lpthread' \
-    -L './xutils/build/libxutils.a' \
-    -f '-g -O2 -Wall -I./src -I./xutils/build' \
+    -L './xutils/build/lib/libxutils.a' \
+    -f '-g -O2 -Wall -I./xutils/build/include' \
 ```
 
 With argument `-j` it also generates the 'json' config file, which can be used in the future to avoid using command line arguments every time.
@@ -70,17 +70,22 @@ The config file was generated and used by this project.
 ```json
 {
     "build": {
-        "name": "smake",
-        "flags": "-g -O2 -Wall -I./src -I./xutils/build",
-        "ldLibs": "./xutils/build/libxutils.a",
+        "flags": "-g -O2 -Wall",
         "libs": "-lpthread",
+        "ldLibs": "./xutils/build/lib/libxutils.a",
         "outputDir": "./obj",
-        "overwrite": true,
+        "overwrite": false,
+        "name": "smake",
         "cxx": false,
         "verbose": 0,
 
+        "includes": [
+            "./src",
+            "./xutils/build/include"
+        ],
+
         "excludes": [
-            "./xutils",
+            "./xutils"
         ]
     },
 
