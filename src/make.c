@@ -463,7 +463,7 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     XArray_Sort(&pCtx->pathArr, SMake_CompareLen, NULL);
     SMake_SerializeArray(&pCtx->pathArr, ":", sVPath, sizeof(sVPath));
 
-    const char *pFPICOption = bShared ? "-fPIC" : XSTR_EMPTY;
+    const char *pFPICOption = bShared ? " -fPIC" : XSTR_EMPTY;
     xbool_t bInstallIncludes = xstrused(pCtx->sHeaderDst);
     xbool_t bInstallBinary = xstrused(pCtx->sBinaryDst);
     int bVPathLen = strlen(sVPath);
@@ -475,7 +475,7 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
 
     XFile_Print(&file, "\n.%s.$(OBJ):\n", pCtx->bIsCPP ? "cpp" : "c");
     XFile_Print(&file, "\t@test -d $(ODIR) || mkdir -p $(ODIR)\n");
-    XFile_Print(&file, "\t$(%s) $(%s) %s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
+    XFile_Print(&file, "\t$(%s) $(%s)%s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
     XFile_Print(&file, "$(NAME):$(OBJS)\n");
 
     if (bStatic) XFile_Print(&file, "\t$(AR) rcs -o $(ODIR)/$(NAME) $(OBJECTS)\n");
