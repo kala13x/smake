@@ -15,10 +15,7 @@
 
 typedef struct SMakeFind {
     const char *pFindStr;
-    const char *pFlags;
-    const char *pLibs;
     const char *pPath;
-    const char *pLd;
     xbool_t bThisPathOnly;
     xbool_t bInsensitive;
     xbool_t bRecursive;

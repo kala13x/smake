@@ -11,7 +11,7 @@
 
 #define SMAKE_VERSION_MAX     1
 #define SMAKE_VERSION_MIN     1
-#define SMAKE_BUILD_NUMBER    16
+#define SMAKE_BUILD_NUMBER    17
 
 #ifndef _SMAKE_VERSION_H_
 #define _SMAKE_VERSION_H_

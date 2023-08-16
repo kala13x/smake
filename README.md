@@ -117,23 +117,46 @@ Example:
 
         "find": {
             "libssl.so:libcrypto.so": {
-                "path": "/usr/local/ssl/lib:/usr/local/ssl/lib64",
-                "flags": "-D_PROJ_USE_SSL",
-                "libs": "-lssl -lcrypto"
+                "found": {
+                    "append" : {
+                        "path": "/usr/local/ssl/lib:/usr/local/ssl/lib64",
+                        "flags": "-D_PROJ_USE_SSL",
+                        "libs": "-lssl -lcrypto"
+                    }
+                }
             },
 
             "libz.so": {
-                "flags": "-D_PROJ_USE_LIBZ",
-                "libs": "-lz"
+                "found": {
+                    "append" : {
+                        "flags": "-D_PROJ_USE_LIBZ",
+                        "libs": "-lz"
+                    }
+                }
             },
 
             "any_file.txt": {
                 "path": "/opt/examples/smake",
-                "flags": "-D_OPTIONAL_FLAGS",
-                "libs": "-loptional -lexample",
                 "thisPathOnly": true,
                 "insensitive": false,
-                "recursive": false
+                "recursive": false,
+
+                "found": {
+                    "append" : {
+                        "flags": "-D_OPTIONAL_FLAGS",
+                        "libs": "-loptional -lexample"
+                    }
+                },
+
+                "notFound": {
+                    "append": {
+                        "flags": "-D_NO_OPTIONAL_FLAGS",
+                    },
+
+                    "set": {
+                        "libs": "-lonlythis"
+                    }
+                }
             }
         }
     },
@@ -150,13 +173,11 @@ As you can see in the example above, `find` JSON object can be used to find file
 The keys in the nested objects describe how `smake` should handle each dependency:
 
 - `path` (optional): A colon-separated list of directories where `smake` should look for the files. If a file is found in these directories, the corresponding flags and libs will be applied.
-- `flags` (optional): Flags that should be added to the compiler command line if the file is found.
-- `libs` (optional): Libraries that should be linked to the executable if the file is found.
 - `thisPathOnly` (optional): If set to true, smake will only look for the file in the specified path and not in the default locations.
 - `insensitive` (optional): If set to true, the file search will be case-insensitive.
 - `recursive` (optional): If set to true, smake will search recursively in the directories specified by path.
 
-In the example above, `smake` will try to find `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will add `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
+In the example above, `smake` will try to find `libssl.so` and `libcrypto.so` in either `/usr/local/ssl/lib` or `/usr/local/ssl/lib64`, if both of them are found, it will append `-D_PROJ_USE_SSL` to the compiler flags and `-lssl -lcrypto` to the linked libraries. The options for `libz.so` and `any_file.txt` are handled in a similar manner, with the additional `thisPathOnly`, `insensitive`, and `recursive` options.
 
 Without `thisPathOnly` option, `smake` will first look for files in the provided `path`. If not found there, it will search in the following default locations:
 

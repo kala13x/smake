@@ -18,8 +18,12 @@ for arg in "$@"; do
     if [[ $arg == "--install" ]]; then
         sudo make install
     fi
+done
 
-    if [[ $arg == "--cleanup" ]]; then
-        ./clean.sh
+for arg in "$@"; do
+    if [[ $arg == "--cleanup" ||
+          $arg == "--clean" ]]; then
+        $PROJ_PATH/clean.sh
     fi
 done
+

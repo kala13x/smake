@@ -203,6 +203,37 @@ xbool_t SMake_AddTokens(xarray_t *pArr, const char *pDlmt, const char *pInput)
     return XSTDOK;
 }
 
+static xbool_t SMake_AddFindObject(smake_ctx_t *pCtx, xjson_obj_t *pFindObj, xbool_t bAppend)
+{
+    xjson_obj_t *pFlagsObj = XJSON_GetObject(pFindObj, "flags");
+    xjson_obj_t *pLibsObj = XJSON_GetObject(pFindObj, "libs");
+    xjson_obj_t *pLdObj = XJSON_GetObject(pFindObj, "ldLibs");
+
+    const char *pFlags = pFlagsObj != NULL ? XJSON_GetString(pFlagsObj) : NULL;
+    const char *pLibs = pLibsObj != NULL ? XJSON_GetString(pLibsObj) : NULL;
+    const char *pLd = pLdObj != NULL ? XJSON_GetString(pLdObj) : NULL;
+
+    if (xstrused(pFlags))
+    {
+        if (!bAppend) XArray_Clear(&pCtx->flagArr);
+        SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, pFlags);
+    }
+
+    if (xstrused(pLibs))
+    {
+        if (!bAppend) XArray_Clear(&pCtx->libArr);
+        SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, pLibs);
+    }
+
+    if (xstrused(pLd))
+    {
+        if (!bAppend) XArray_Clear(&pCtx->ldArr);
+        SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, pLd);
+    }
+
+    return XTRUE;
+}
+
 int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
 {
     int nChar = 0;
@@ -330,46 +361,6 @@ int SMake_ParseConfig(smake_ctx_t *pCtx)
             }
         }
 
-        xjson_obj_t *pFindObj = XJSON_GetObject(pBuildObj, "find");
-        if (pFindObj != NULL)
-        {
-            xarray_t *pObjects = XJSON_GetObjects(pFindObj);
-            if (pObjects != NULL)
-            {
-                size_t i, nUsed = XArray_Used(pObjects);
-                for (i = 0; i < nUsed; i++)
-                {
-                    xmap_pair_t *pPair = (xmap_pair_t*)XArray_GetData(pObjects, i);
-                    if (pPair == NULL || !xstrused(pPair->pKey)) continue;
-
-                    smake_find_t finder;
-                    finder.pFindStr = pPair->pKey;
-
-                    xjson_obj_t *pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "recursive");
-                    finder.bRecursive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XTRUE;
-
-                    pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "insensitive");
-                    finder.bInsensitive = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XTRUE;
-
-                    pBoolObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "thisPathOnly");
-                    finder.bThisPathOnly = pBoolObj != NULL ? XJSON_GetBool(pBoolObj) : XFALSE;
-
-                    xjson_obj_t *pFlagsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "flags");
-                    xjson_obj_t *pLibsObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "libs");
-                    xjson_obj_t *pPathObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "path");
-                    xjson_obj_t *pLdObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "ldLibs");
-
-                    finder.pFlags = pFlagsObj != NULL ? XJSON_GetString(pFlagsObj) : NULL;
-                    finder.pLibs = pLibsObj != NULL ? XJSON_GetString(pLibsObj) : NULL;
-                    finder.pPath = pPathObj != NULL ? XJSON_GetString(pPathObj) : NULL;
-                    finder.pLd = pLdObj != NULL ? XJSON_GetString(pLdObj) : NULL;
-                    SMake_FindLibs(pCtx, &finder);
-                }
-
-                XArray_Destroy(pObjects);
-            }
-        }
-
         pValueObj = XJSON_GetObject(pBuildObj, "flags");
         if (pValueObj != NULL)
         {
@@ -389,6 +380,60 @@ int SMake_ParseConfig(smake_ctx_t *pCtx)
         {
             const char *pLd = XJSON_GetString(pValueObj);
             SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, pLd);
+        }
+
+        xjson_obj_t *pFindObj = XJSON_GetObject(pBuildObj, "find");
+        if (pFindObj != NULL)
+        {
+            xarray_t *pObjects = XJSON_GetObjects(pFindObj);
+            if (pObjects != NULL)
+            {
+                size_t i, nUsed = XArray_Used(pObjects);
+                for (i = 0; i < nUsed; i++)
+                {
+                    xmap_pair_t *pPair = (xmap_pair_t*)XArray_GetData(pObjects, i);
+                    if (pPair == NULL || pPair->pData == NULL|| !xstrused(pPair->pKey)) continue;
+
+                    xjson_obj_t *pFoundObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "found");
+                    xjson_obj_t *pNotFoundObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "notFound");
+                    if (pFoundObj == NULL && pNotFoundObj == NULL) continue;
+
+                    smake_find_t finder;
+                    finder.pFindStr = pPair->pKey;
+
+                    xjson_obj_t *pFindOptObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "path");
+                    finder.pPath = pFindOptObj != NULL ? XJSON_GetString(pFindOptObj) : NULL;
+
+                    pFindOptObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "thisPathOnly");
+                    finder.bThisPathOnly = pFindOptObj != NULL ? XJSON_GetBool(pFindOptObj) : XFALSE;
+
+                    pFindOptObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "insensitive");
+                    finder.bInsensitive = pFindOptObj != NULL ? XJSON_GetBool(pFindOptObj) : XTRUE;
+
+                    pFindOptObj = XJSON_GetObject((xjson_obj_t*)pPair->pData, "recursive");
+                    finder.bRecursive = pFindOptObj != NULL ? XJSON_GetBool(pFindOptObj) : XTRUE;
+
+                    XSTATUS nStatus = SMake_FindLibs(pCtx, &finder);
+                    if (nStatus == XSTDOK)
+                    {
+                        xjson_obj_t *pAppendObj = XJSON_GetObject(pFoundObj, "append");
+                        if (pAppendObj != NULL) SMake_AddFindObject(pCtx, pAppendObj, XTRUE);
+
+                        xjson_obj_t *pSetObj = XJSON_GetObject(pFoundObj, "set");
+                        if (pSetObj != NULL) SMake_AddFindObject(pCtx, pSetObj, XFALSE);
+                    }
+                    else
+                    {
+                        xjson_obj_t *pAppendObj = XJSON_GetObject(pNotFoundObj, "append");
+                        if (pAppendObj != NULL) SMake_AddFindObject(pCtx, pAppendObj, XTRUE);
+
+                        xjson_obj_t *pSetObj = XJSON_GetObject(pNotFoundObj, "set");
+                        if (pSetObj != NULL) SMake_AddFindObject(pCtx, pSetObj, XFALSE);
+                    }
+                }
+
+                XArray_Destroy(pObjects);
+            }
         }
 
         pValueObj = XJSON_GetObject(pBuildObj, "name");

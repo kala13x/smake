@@ -80,8 +80,6 @@ static XSTATUS SMake_FindLib(const smake_find_t *pFind, const char *pLib)
 XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
 {
     XASSERT_RET((pFind != NULL && xstrused(pFind->pFindStr)), XSTDINV);
-    XASSERT_RET((xstrused(pFind->pFlags) || xstrused(pFind->pLibs)), XSTDNON);
-
     xarray_t *pLibs = xstrsplit(pFind->pFindStr, ":");
     XASSERT(pLibs, xthrow("Failed to split input: %s", pFind->pFindStr));
 
@@ -95,18 +93,6 @@ XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
 
         nStatus = SMake_FindLib(pFind, pLib);
         if (nStatus != XSTDOK) break;
-    }
-
-    if (nStatus == XSTDOK)
-    {
-        if (xstrused(pFind->pFlags))
-            SMake_AddTokens(&pCtx->flagArr, XSTR_SPACE, pFind->pFlags);
-
-        if (xstrused(pFind->pLibs))
-            SMake_AddTokens(&pCtx->libArr, XSTR_SPACE, pFind->pLibs);
-
-        if (xstrused(pFind->pLd))
-            SMake_AddTokens(&pCtx->ldArr, XSTR_SPACE, pFind->pLd);
     }
 
     XArray_Destroy(pLibs);
