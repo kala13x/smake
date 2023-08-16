@@ -29,8 +29,9 @@ Here is a brief overview of all available command line arguments that `smake` su
 * `-o <path>` - Set the object output destination.
 * `-p <name>` - Set the program or library name.
 * `-s <path>` - Set the path to the source files.
-* `-j` - Generate a config file.
+* `-V` - Print version and exit.
 * `-I` - Initialize a new project.
+* `-j` - Generate a config file.
 * `-d` - Enable the use of a virtual directory.
 * `-v` - Adjust the verbosity level of the output.
 * `-x` - Use the CPP compiler.
