@@ -237,7 +237,7 @@ static xbool_t SMake_AddFindObject(smake_ctx_t *pCtx, xjson_obj_t *pFindObj, xbo
 int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
 {
     int nChar = 0;
-    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:L:I1:d1:j1:w1:x1:h1")) != -1)
+    while ((nChar = getopt(argc, argv, "o:s:c:e:b:i:f:g:l:p:v:L:V1:I1:d1:j1:w1:x1:h1")) != -1)
     {
         switch (nChar)
         {
@@ -294,6 +294,9 @@ int SMake_ParseArgs(smake_ctx_t *pCtx, int argc, char *argv[])
             case 'I':
                 pCtx->bInitProj = XTRUE;
                 break;
+            case 'V':
+                SMake_PrintVersion(argv[0]);
+                return XFALSE;
             case 'h':
             default:
                 SMake_Usage(argv[0]);

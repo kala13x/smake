@@ -21,8 +21,13 @@ int main(int argc, char *argv[])
     smake_ctx_t smake;
     SMake_InitContext(&smake);
 
-    if (!SMake_ParseArgs(&smake, argc, argv) ||
-        !SMake_ParseConfig(&smake) ||
+    if (!SMake_ParseArgs(&smake, argc, argv))
+    {
+        SMake_ClearContext(&smake);
+        return XSTDNON;
+    }
+
+    if (!SMake_ParseConfig(&smake) ||
         !SMake_InitProject(&smake) ||
         !SMake_LoadFiles(&smake, NULL) ||
         !SMake_ParseProject(&smake) ||

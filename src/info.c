@@ -28,10 +28,15 @@ const char* SMake_VersionShort()
     return sVersion;
 }
 
+void SMake_PrintVersion(const char *pName)
+{
+    printf("%s - v%s (email: s.kalatoz@gmail.com)\n", pName, SMake_Version());
+}
+
 void SMake_Greet(const char *pName)
 {
     printf("=============================================================================\n");
-    printf("%s Version: %s (email: s.kalatoz@gmail.com)\n", pName, SMake_Version());
+    SMake_PrintVersion(pName);
     printf("=============================================================================\n");
 }
 
@@ -52,9 +57,9 @@ void SMake_Usage(const char *pName)
     SMake_Greet(SMAKE_FULL_NAME);
     int nLength = strlen(pName) + 6;
  
-    printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>] [-I]\n", pName);
-    printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>] [-j] \n", WhiteSpace(nLength));
-    printf(" %s [-L <'libs'>] [-p <name>] [-s <path>] [-d] [-v] [-w] [-x] [-h]\n", WhiteSpace(nLength));
+    printf("Usage: %s [-f <'flags'>] [-b <path>] [-i <path>] [-c <path>] [-I] [-V]\n", pName);
+    printf(" %s [-l <'libs'>] [-e <paths>] [-g <name>] [-o <path>] [-d] [-j]\n", WhiteSpace(nLength));
+    printf(" %s [-L <'libs'>] [-p <name>] [-s <path>] [-v <numb>] [-w] [-x] [-h]\n", WhiteSpace(nLength));
     printf("Options are:\n");
     printf("  -f <'flags'>        # Compiler flags\n");
     printf("  -l <'libs'>         # Linked libraries\n");
@@ -67,10 +72,11 @@ void SMake_Usage(const char *pName)
     printf("  -o <path>           # Object output destination\n");
     printf("  -p <name>           # Program or library name\n");
     printf("  -s <path>           # Path to source files\n");
+    printf("  -v <numb>           # Verbosity level\n");
+    printf("  -V                  # Print version and exit\n");
     printf("  -I                  # Initialize project\n");
     printf("  -j                  # Generate smake.json\n");
     printf("  -d                  # Virtual directory\n");
-    printf("  -v                  # Verbosity level\n");
     printf("  -w                  # Force overwrite output\n");
     printf("  -x                  # Create Makefile for CPP\n");
     printf("  -h                  # Print version and usage\n\n");
