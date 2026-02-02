@@ -3,8 +3,8 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -O2 -Wall -Wextra -pedantic -I. -I./xutils/src/ -I./xutils/src/crypt/ -I./xutils/src/data/ -I./xutils/src/net/ -I./xutils/src/sys/
-CFLAGS += -I./src -I./xutils/build/include
+CFLAGS = -O2 -Wall -Wextra -pedantic -I. -I./src/
+CFLAGS += -I./xutils/src/ -I./xutils/src/crypt/ -I./xutils/src/data/ -I./xutils/src/net/ -I./xutils/src/sys/ -I./src
 LD_LIBS = ./xutils/build/libxutils.a
 LIBS = -lpthread -lm
 NAME = smake
