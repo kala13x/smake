@@ -329,7 +329,7 @@ int SMake_ParseConfig(smake_ctx_t *pCtx)
     }
 
     xjson_t json;
-    if (!XJSON_Parse(&json, pBuffer, nSize))
+    if (!XJSON_Parse(&json, NULL, pBuffer, nSize))
     {
         char sError[256];
         XJSON_GetErrorStr(&json, sError, sizeof(sError));
@@ -535,15 +535,15 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
         }
     }
 
-    xjson_obj_t *pRootObj = XJSON_NewObject(NULL, XFALSE);
+    xjson_obj_t *pRootObj = XJSON_NewObject(NULL, NULL, XFALSE);
     if (pRootObj != NULL)
     {
-        xjson_obj_t *pBuildObj = XJSON_NewObject("build", XFALSE);
+        xjson_obj_t *pBuildObj = XJSON_NewObject(NULL, "build", XFALSE);
         if (pBuildObj != NULL)
         {
-            if (xstrused(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString("name", pCtx->sName));
-            if (xstrused(pCtx->sCompiler)) XJSON_AddObject(pBuildObj, XJSON_NewString("compiler", pCtx->sCompiler));
-            if (xstrused(pCtx->sOutDir)) XJSON_AddObject(pBuildObj, XJSON_NewString("outputDir", pCtx->sOutDir));
+            if (xstrused(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "name", pCtx->sName));
+            if (xstrused(pCtx->sCompiler)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "compiler", pCtx->sCompiler));
+            if (xstrused(pCtx->sOutDir)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "outputDir", pCtx->sOutDir));
 
             if (XArray_Used(&pCtx->flagArr))
             {
@@ -551,7 +551,7 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                 sFlags[0] = XSTR_NUL;
 
                 SMake_SerializeArray(&pCtx->flagArr, XSTR_SPACE, sFlags, sizeof(sFlags));
-                XJSON_AddObject(pBuildObj, XJSON_NewString("flags", sFlags));
+                XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "flags", sFlags));
             }
 
             if (XArray_Used(&pCtx->libArr))
@@ -560,7 +560,7 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                 sLibs[0] = XSTR_NUL;
 
                 SMake_SerializeArray(&pCtx->libArr, XSTR_SPACE, sLibs, sizeof(sLibs));
-                XJSON_AddObject(pBuildObj, XJSON_NewString("libs", sLibs));
+                XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "libs", sLibs));
             }
 
             if (XArray_Used(&pCtx->ldArr))
@@ -569,13 +569,13 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                 sLd[0] = XSTR_NUL;
 
                 SMake_SerializeArray(&pCtx->ldArr, XSTR_SPACE, sLd, sizeof(sLd));
-                XJSON_AddObject(pBuildObj, XJSON_NewString("ldLibs", sLd));
+                XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "ldLibs", sLd));
             }
 
             size_t i, nIncludes = XArray_Used(&pCtx->includes);
             if (nIncludes)
             {
-                xjson_obj_t *pIncludesArr = XJSON_NewArray("includes", XFALSE);
+                xjson_obj_t *pIncludesArr = XJSON_NewArray(NULL, "includes", XFALSE);
                 if (pIncludesArr != NULL)
                 {
                     for (i = 0; i < nIncludes; i++)
@@ -583,7 +583,7 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                         const char *pIncl = (const char *)XArray_GetData(&pCtx->includes, i);
                         if (!xstrused(pIncl)) continue;
 
-                        XJSON_AddObject(pIncludesArr, XJSON_NewString(NULL, pIncl));
+                        XJSON_AddObject(pIncludesArr, XJSON_NewString(NULL, NULL, pIncl));
                     }
 
                     XJSON_AddObject(pBuildObj, pIncludesArr);
@@ -593,7 +593,7 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
             size_t nExcludes = XArray_Used(&pCtx->excludes);
             if (nExcludes)
             {
-                xjson_obj_t *pExcludesArr = XJSON_NewArray("excludes", XFALSE);
+                xjson_obj_t *pExcludesArr = XJSON_NewArray(NULL, "excludes", XFALSE);
                 if (pExcludesArr != NULL)
                 {
                     for (i = 0; i < nExcludes; i++)
@@ -601,40 +601,40 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
                         const char *pExcl = (const char *)XArray_GetData(&pCtx->excludes, i);
                         if (!xstrused(pExcl)) continue;
 
-                        XJSON_AddObject(pExcludesArr, XJSON_NewString(NULL, pExcl));
+                        XJSON_AddObject(pExcludesArr, XJSON_NewString(NULL, NULL, pExcl));
                     }
 
                     XJSON_AddObject(pBuildObj, pExcludesArr);
                 }
             }
 
-            XJSON_AddObject(pBuildObj, XJSON_NewInt("verbose", pCtx->nVerbose));
-            XJSON_AddObject(pBuildObj, XJSON_NewBool("overwrite", pCtx->bOverwrite));
-            XJSON_AddObject(pBuildObj, XJSON_NewBool("cxx", pCtx->bIsCPP));
+            XJSON_AddObject(pBuildObj, XJSON_NewInt(NULL, "verbose", pCtx->nVerbose));
+            XJSON_AddObject(pBuildObj, XJSON_NewBool(NULL, "overwrite", pCtx->bOverwrite));
+            XJSON_AddObject(pBuildObj, XJSON_NewBool(NULL, "cxx", pCtx->bIsCPP));
             XJSON_AddObject(pRootObj, pBuildObj);
         }
 
         if (xstrused(pCtx->sBinaryDst) || xstrused(pCtx->sHeaderDst))
         {
-            xjson_obj_t *pInstallObj = XJSON_NewObject("install", XFALSE);
+            xjson_obj_t *pInstallObj = XJSON_NewObject(NULL, "install", XFALSE);
             if (pInstallObj != NULL)
             {
-                if (xstrused(pCtx->sBinaryDst)) XJSON_AddObject(pInstallObj, XJSON_NewString("binaryDir", pCtx->sBinaryDst));
-                if (xstrused(pCtx->sHeaderDst)) XJSON_AddObject(pInstallObj, XJSON_NewString("headerDir", pCtx->sHeaderDst));
+                if (xstrused(pCtx->sBinaryDst)) XJSON_AddObject(pInstallObj, XJSON_NewString(NULL, "binaryDir", pCtx->sBinaryDst));
+                if (xstrused(pCtx->sHeaderDst)) XJSON_AddObject(pInstallObj, XJSON_NewString(NULL, "headerDir", pCtx->sHeaderDst));
                 XJSON_AddObject(pRootObj, pInstallObj);
             }
         }
     }
 
     xjson_writer_t linter;
-    XJSON_InitWriter(&linter, NULL, 1); // Dynamic allocation
+    XJSON_InitWriter(&linter, NULL, NULL, 1); // Dynamic allocation
     linter.nTabSize = 4; // Enable linter and set tab size (4 spaces)
     XSTATUS nStatus = XSTDOK;
 
     /* Dump objects directly */
     if (XJSON_WriteObject(pRootObj, &linter))
     {
-        if (XPath_Write(pPath, "cwt", (const uint8_t*)linter.pData, linter.nLength) <= 0)
+        if (XPath_Write(pPath, (const uint8_t*)linter.pData, linter.nLength, "cwt") <= 0)
         {
             xloge("Failed to wite data: %s (%s)", pPath, XSTRERR);
             nStatus = XSTDNON;

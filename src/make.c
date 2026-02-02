@@ -40,14 +40,14 @@ SMakeFile* SMake_FileNew(const char *pPath, const char *pName, int nType)
 
 void SMake_InitContext(smake_ctx_t *pCtx) 
 {
-    XArray_Init(&pCtx->includes, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->excludes, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->fileArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->pathArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->flagArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->libArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->objArr, XSTDNON, XFALSE);
-    XArray_Init(&pCtx->ldArr, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->includes, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->excludes, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->fileArr, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->pathArr, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->flagArr, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->libArr, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->objArr, NULL, XSTDNON, XFALSE);
+    XArray_Init(&pCtx->ldArr, NULL, XSTDNON, XFALSE);
 
     pCtx->includes.clearCb = SMake_ClearCallback;
     pCtx->excludes.clearCb = SMake_ClearCallback;

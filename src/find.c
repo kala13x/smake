@@ -18,7 +18,7 @@
     "/usr/local/lib:" \
     "/usr/local/lib64"
 
-int SMake_SearchCb(xfile_search_t *pSearch, xfile_entry_t *pEntry, const char *pMsg)
+int SMake_SearchCb(xsearch_t *pSearch, xsearch_entry_t *pEntry, const char *pMsg)
 {
     XSYNC_ATOMIC_SET(pSearch->pInterrupted, XTRUE);\
     (void)pEntry;
@@ -28,19 +28,19 @@ int SMake_SearchCb(xfile_search_t *pSearch, xfile_entry_t *pEntry, const char *p
 
 static XSTATUS SMake_FindLibrary(const smake_find_t *pFind, const char *pLib, const char *pPath)
 {
-    xfile_search_t search;
-    XFile_SearchInit(&search, pLib);
+    xsearch_t search;
+    XSearch_Init(&search, pLib);
 
     search.callback = SMake_SearchCb;
     search.bInsensitive = pFind->bInsensitive;
     search.bRecursive = pFind->bRecursive;
 
-    XFile_Search(&search, pPath);
+    XSearch(&search, pPath);
     size_t nUsed = XArray_Used(&search.fileArray);
 
     if (nUsed > 0)
     {
-        xfile_entry_t *pFile = (xfile_entry_t*)XArray_GetData(&search.fileArray, 0);
+        xsearch_entry_t *pFile = (xsearch_entry_t*)XArray_GetData(&search.fileArray, 0);
         XASSERT((pFile != NULL) && xstrused(pFile->sPath), XSTDNON);
 
         size_t nLentgh = strnlen(pFile->sPath, sizeof(pFile->sPath) - 1);
@@ -48,7 +48,7 @@ static XSTATUS SMake_FindLibrary(const smake_find_t *pFind, const char *pLib, co
         xlogn("Found %s: %s/%s", pLib, pFile->sPath, pFile->sName);
     }
 
-    XFile_SearchDestroy(&search);
+    XSearch_Destroy(&search);
     return nUsed ? XSTDOK : XSTDNON;
 }
 

@@ -13,11 +13,12 @@
 /* libxutils includes */
 #include "xutils/src/xstd.h"
 #include "xutils/src/data/array.h"
-#include "xutils/src/data/xjson.h"
-#include "xutils/src/data/xstr.h"
+#include "xutils/src/data/json.h"
+#include "xutils/src/data/str.h"
 #include "xutils/src/data/map.h"
-#include "xutils/src/sys/xlog.h"
-#include "xutils/src/sys/xcli.h"
+#include "xutils/src/sys/srch.h"
+#include "xutils/src/sys/log.h"
+#include "xutils/src/sys/cli.h"
 #include "xutils/src/sys/xfs.h"
 
 #endif /* __CMAKE_STDINC_H__ */
