@@ -344,6 +344,7 @@ int SMake_CompareName(const void *pData1, const void *pData2, void *pCtx)
     SMakeFile *pObj1 = (SMakeFile*)pFirst->pData;
     SMakeFile *pObj2 = (SMakeFile*)pSecond->pData;
 
+    (void)pCtx;
     return strcmp(pObj1->sName, pObj2->sName);
 }
 
@@ -355,6 +356,7 @@ int SMake_CompareLen(const void *pData1, const void *pData2, void *pCtx)
     const char *pStr1 = (const char*)pFirst->pData;
     const char *pStr2 = (const char*)pSecond->pData;
 
+    (void)pCtx;
     return strlen(pStr1) > strlen(pStr2);
 }
 

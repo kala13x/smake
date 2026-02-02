@@ -1,8 +1,8 @@
 {
     "build": {
-        "flags": "-g -O2 -Wall",
-        "libs": "-lpthread",
-        "ldLibs": "./xutils/build/lib/libxutils.a",
+        "flags": "-O2 -Wall -Wextra -pedantic -I./xutils/src/ -I./xutils/src/crypt/ -I./xutils/src/data/ -I./xutils/src/net/ -I./xutils/src/sys/",
+        "libs": " -lpthread -lm",
+        "ldLibs": "./xutils/build/libxutils.a",
         "outputDir": "./obj",
         "overwrite": true,
         "name": "smake",

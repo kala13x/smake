@@ -3,9 +3,9 @@
 # https://github.com/kala13x/smake #
 ####################################
 
-CFLAGS = -g -O2 -Wall
+CFLAGS = -O2 -Wall -Wextra -pedantic -I. -I./xutils/src/ -I./xutils/src/crypt/ -I./xutils/src/data/ -I./xutils/src/net/ -I./xutils/src/sys/
 CFLAGS += -I./src -I./xutils/build/include
-LD_LIBS = ./xutils/build/lib/libxutils.a
+LD_LIBS = ./xutils/build/libxutils.a
 LIBS = -lpthread -lm
 NAME = smake
 ODIR = ./obj
@@ -23,7 +23,7 @@ VPATH = ./src
 
 .c.$(OBJ):
 	@test -d $(ODIR) || mkdir -p $(ODIR)
-	$(CC) $(CFLAGS)  -c -o $(ODIR)/$@ $< $(LIBS)
+	$(CC) $(CFLAGS) -c -o $(ODIR)/$@ $< $(LIBS)
 
 $(NAME):$(OBJS)
 	$(CC) $(CFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)

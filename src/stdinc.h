@@ -11,13 +11,13 @@
 #define __CMAKE_STDINC_H__
 
 /* libxutils includes */
-#include "xutils/xstd.h"
-#include "xutils/array.h"
-#include "xutils/xjson.h"
-#include "xutils/xstr.h"
-#include "xutils/xlog.h"
-#include "xutils/xcli.h"
-#include "xutils/xfs.h"
-#include "xutils/map.h"
+#include "xutils/src/xstd.h"
+#include "xutils/src/data/array.h"
+#include "xutils/src/data/xjson.h"
+#include "xutils/src/data/xstr.h"
+#include "xutils/src/data/map.h"
+#include "xutils/src/sys/xlog.h"
+#include "xutils/src/sys/xcli.h"
+#include "xutils/src/sys/xfs.h"
 
 #endif /* __CMAKE_STDINC_H__ */

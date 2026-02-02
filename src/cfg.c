@@ -52,7 +52,7 @@ xbool_t SMake_SerializeIncludes(xarray_t *pArr, const char *pDlmt, char *pOutput
     for (i = 0; i < nCount; i++)
     {
         const char *pData = (const char*)XArray_GetData(pArr, i);
-        if (!xstrused(pData) || xstrcmp(pData, "./") || xstrcmp(pData, ".") ) continue;
+        if (!xstrused(pData)) continue;
 
         if (!bStarted)  bStarted = XTRUE;
         else if (pDlmt) nAvail = xstrncatf(pOutput, nAvail, "%s", pDlmt);

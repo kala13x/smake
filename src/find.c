@@ -20,7 +20,9 @@
 
 int SMake_SearchCb(xfile_search_t *pSearch, xfile_entry_t *pEntry, const char *pMsg)
 {
-    XSYNC_ATOMIC_SET(pSearch->pInterrupted, XTRUE);
+    XSYNC_ATOMIC_SET(pSearch->pInterrupted, XTRUE);\
+    (void)pEntry;
+    (void)pMsg;
     return XSTDOK;
 }
 
@@ -95,6 +97,7 @@ XSTATUS SMake_FindLibs(smake_ctx_t *pCtx, const smake_find_t *pFind)
         if (nStatus != XSTDOK) break;
     }
 
+    (void)pCtx;
     XArray_Destroy(pLibs);
     return nStatus;
 }
