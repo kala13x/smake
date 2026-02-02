@@ -1,6 +1,6 @@
 {
     "build": {
-        "flags": "-O2 -Wall -Wextra -pedantic -I. -I./src/",
+        "flags": "-O2 -Wall -Wextra -pedantic",
         "libs": " -lpthread -lm",
         "ldLibs": "./xutils/build/libxutils.a",
         "outputDir": "./obj",
@@ -10,6 +10,7 @@
         "verbose": 0,
 
         "includes": [
+            "./",
             "./xutils/src/",
             "./xutils/src/crypt/",
             "./xutils/src/data/",
