@@ -40,6 +40,8 @@ typedef struct SMakeContext {
     char sCompiler[SMAKE_NAME_MAX];
     char sHeaderDst[SMAKE_PATH_MAX];
     char sBinaryDst[SMAKE_PATH_MAX];
+    char sInjectPath[SMAKE_PATH_MAX];
+    char sLDFlags[SMAKE_LINE_MAX];
     char sOutDir[SMAKE_PATH_MAX];
     char sConfig[SMAKE_PATH_MAX];
     char sPath[SMAKE_PATH_MAX];

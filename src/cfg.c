@@ -448,6 +448,12 @@ int SMake_ParseConfig(smake_ctx_t *pCtx)
         pValueObj = XJSON_GetObject(pBuildObj, "compiler");
         if (pValueObj != NULL) xstrncpy(pCtx->sCompiler, sizeof(pCtx->sCompiler), XJSON_GetString(pValueObj));
 
+        pValueObj = XJSON_GetObject(pBuildObj, "inject");
+        if (pValueObj != NULL) xstrncpy(pCtx->sInjectPath, sizeof(pCtx->sInjectPath), XJSON_GetString(pValueObj));
+
+        pValueObj = XJSON_GetObject(pBuildObj, "ldflags");
+        if (pValueObj != NULL) xstrncpy(pCtx->sLDFlags, sizeof(pCtx->sLDFlags), XJSON_GetString(pValueObj));
+
         pValueObj = XJSON_GetObject(pBuildObj, "overwrite");
         if (pValueObj != NULL) pCtx->bOverwrite = XJSON_GetBool(pValueObj);
 
@@ -544,6 +550,8 @@ int SMake_WriteConfig(smake_ctx_t *pCtx)
             if (xstrused(pCtx->sName)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "name", pCtx->sName));
             if (xstrused(pCtx->sCompiler)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "compiler", pCtx->sCompiler));
             if (xstrused(pCtx->sOutDir)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "outputDir", pCtx->sOutDir));
+            if (xstrused(pCtx->sInjectPath)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "inject", pCtx->sInjectPath));
+            if (xstrused(pCtx->sLDFlags)) XJSON_AddObject(pBuildObj, XJSON_NewString(NULL, "ldflags", pCtx->sLDFlags));
 
             if (XArray_Used(&pCtx->flagArr))
             {
