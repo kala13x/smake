@@ -430,7 +430,7 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
 
     xbool_t bLDLibs = xstrused(sLd);
     if (xstrused(sLd)) XFile_Print(&file, "LD_LIBS = %s\n", sLd);
-    XFile_Print(&file, "LDFLAGS =%s%s\n", xstrused(pCtx->sLDFlags) ? " " : "", pCtx->sLDFlags);
+    if (xstrused(pCtx->sLDFlags)) XFile_Print(&file, "LDFLAGS = %s\n", pCtx->sLDFlags);
 
     XFile_Print(&file, "LIBS = %s\n", sLibs);
     XFile_Print(&file, "NAME = %s\n", pCtx->sName);
@@ -496,10 +496,19 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     XFile_Print(&file, "\t$(%s) $(%s)%s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
     XFile_Print(&file, "$(NAME):$(OBJS)\n");
 
+    
     if (bStatic) XFile_Print(&file, "\t$(AR) rcs $(ODIR)/$(NAME) $(OBJECTS)\n");
     else if (bShared) XFile_Print(&file, "\t$(%s) -shared -o $(ODIR)/$(NAME) $(OBJECTS)\n", pCompiler);
-    else if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
-    else XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
+    else if (xstrused(pCtx->sLDFlags))
+    {
+        if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
+        else XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
+    }
+    else
+    {
+        if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
+        else XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
+    }
 
     if (bInstallBinary || bInstallIncludes)
     {
