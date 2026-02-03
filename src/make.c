@@ -480,7 +480,7 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     XFile_Print(&file, "\t$(%s) $(%s)%s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
     XFile_Print(&file, "$(NAME):$(OBJS)\n");
 
-    if (bStatic) XFile_Print(&file, "\t$(AR) rcs -o $(ODIR)/$(NAME) $(OBJECTS)\n");
+    if (bStatic) XFile_Print(&file, "\t$(AR) rcs $(ODIR)/$(NAME) $(OBJECTS)\n");
     else if (bShared) XFile_Print(&file, "\t$(%s) -shared -o $(ODIR)/$(NAME) $(OBJECTS)\n", pCompiler);
     else if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
     else XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
