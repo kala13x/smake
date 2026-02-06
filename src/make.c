@@ -428,11 +428,10 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     else if (xstrused(sIncludes)) XFile_Print(&file, "%s = %s\n", pCFlags, sIncludes);
     if (xstrused(sFlags) && xstrused(sIncludes)) XFile_Print(&file, "%s += %s\n", pCFlags, sIncludes);
 
-    xbool_t bLDLibs = xstrused(sLd);
     if (xstrused(sLd)) XFile_Print(&file, "LD_LIBS = %s\n", sLd);
     if (xstrused(pCtx->sLDFlags)) XFile_Print(&file, "LDFLAGS = %s\n", pCtx->sLDFlags);
+    if (xstrused(sLibs)) XFile_Print(&file, "LIBS = %s\n", sLibs);
 
-    XFile_Print(&file, "LIBS = %s\n", sLibs);
     XFile_Print(&file, "NAME = %s\n", pCtx->sName);
     XFile_Print(&file, "ODIR = %s\n", pCtx->sOutDir);
     XFile_Print(&file, "OBJ = o\n\n");
@@ -482,6 +481,10 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
     SMake_SerializeArray(&pCtx->pathArr, ":", sVPath, sizeof(sVPath));
 
     const char *pFPICOption = bShared ? " -fPIC" : XSTR_EMPTY;
+    const char *pLinkLibs = xstrused(sLibs) ? " $(LIBS)" : XSTR_EMPTY;
+    const char *pLdFlags = xstrused(sLd) ? " $(LDFLAGS)" : XSTR_EMPTY;
+    const char *pLdLibs = xstrused(sLd) ? " $(LD_LIBS)" : XSTR_EMPTY;
+
     xbool_t bInstallIncludes = xstrused(pCtx->sHeaderDst);
     xbool_t bInstallBinary = xstrused(pCtx->sBinaryDst);
     int bVPathLen = strlen(sVPath);
@@ -493,22 +496,13 @@ xbool_t SMake_WriteMake(smake_ctx_t *pCtx)
 
     XFile_Print(&file, "\n.%s.$(OBJ):\n", pCtx->bIsCPP ? "cpp" : "c");
     XFile_Print(&file, "\t@test -d $(ODIR) || mkdir -p $(ODIR)\n");
-    XFile_Print(&file, "\t$(%s) $(%s)%s -c -o $(ODIR)/$@ $< $(LIBS)\n\n", pCompiler, pCFlags, pFPICOption);
+    XFile_Print(&file, "\t$(%s) $(%s)%s -c -o $(ODIR)/$@ $<%s\n\n", pCompiler, pCFlags, pFPICOption, pLinkLibs);
     XFile_Print(&file, "$(NAME):$(OBJS)\n");
 
     
     if (bStatic) XFile_Print(&file, "\t$(AR) rcs $(ODIR)/$(NAME) $(OBJECTS)\n");
     else if (bShared) XFile_Print(&file, "\t$(%s) -shared -o $(ODIR)/$(NAME) $(OBJECTS)\n", pCompiler);
-    else if (xstrused(pCtx->sLDFlags))
-    {
-        if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
-        else XFile_Print(&file, "\t$(%s) $(%s) $(LDFLAGS) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
-    }
-    else
-    {
-        if (!bLDLibs) XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LIBS)\n", pCompiler, pCFlags);
-        else XFile_Print(&file, "\t$(%s) $(%s) -o $(ODIR)/$(NAME) $(OBJECTS) $(LD_LIBS) $(LIBS)\n", pCompiler, pCFlags);
-    }
+    else XFile_Print(&file, "\t$(%s) $(%s)%s -o $(ODIR)/$(NAME) $(OBJECTS)%s%s\n", pCompiler, pCFlags, pLdFlags, pLdLibs, pLinkLibs);
 
     if (bInstallBinary || bInstallIncludes)
     {
